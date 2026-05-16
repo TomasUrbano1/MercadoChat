@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // backend seguro
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 // GET /api/conversations
@@ -18,7 +18,6 @@ export async function GET(req: Request) {
     );
   }
 
-  // Buscar conversaciones donde el usuario sea buyer o seller
   const { data, error } = await supabase
     .from("conversations")
     .select(
@@ -40,16 +39,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Procesar último mensaje
-  const formatted = data.map((conv) => ({
-    id: conv.id,
-    product_title: conv.products?.[0]?.title ?? "Producto",
-    product_image: conv.products?.[0]?.image_url ?? null,
-    last_message: conv.messages?.[conv.messages.length - 1]?.content ?? "",
-    updated_at:
-      conv.messages?.[conv.messages.length - 1]?.created_at ??
-      conv.created_at,
-  }));
+  const formatted = data.map((conv) => {
+    const product = conv.products?.[0];
+    const lastMessage = conv.messages?.[conv.messages.length - 1];
+
+    return {
+      id: conv.id,
+      product_title: product?.title ?? "Producto",
+      product_image: product?.image_url ?? null,
+      last_message: lastMessage?.content ?? "",
+      updated_at: lastMessage?.created_at ?? conv.created_at,
+    };
+  });
 
   return NextResponse.json(formatted);
 }
@@ -66,7 +67,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Crear conversación
   const { data, error } = await supabase
     .from("conversations")
     .insert({

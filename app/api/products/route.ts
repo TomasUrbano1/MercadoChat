@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // backend seguro
-);
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; // ← client backend seguro
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -19,7 +14,7 @@ export async function POST(req: Request) {
   }
 
   // Insertar producto real
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("products")
     .insert({
       title,

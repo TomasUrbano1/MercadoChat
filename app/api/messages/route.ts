@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // usamos service_role porque es backend
-);
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; // ← usamos el client del backend
 
 // GET /api/messages?conversationId=xxx
 export async function GET(req: Request) {
@@ -18,7 +13,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("messages")
     .select("*")
     .eq("conversation_id", conversationId)
@@ -51,7 +46,7 @@ export async function POST(req: Request) {
     conversation_id: conversationId,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("messages")
     .insert(newMessage)
     .select()

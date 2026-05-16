@@ -1,27 +1,72 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { ImageOff } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  category: string;
+  image_url: string | null;
+}
 
 interface Props {
-  product: {
-    id: string;
-    title: string;
-    price: number;
-    category: string;
-    image_url: string;
-  };
+  product: Product;
 }
 
 export default function ProductCard({ product }: Props) {
+  const [error, setError] = useState(false);
+
   return (
-    <Link href={`/products/${product.id}`} className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
-      <div className="relative h-52">
-        <Image src={product.image_url} alt={product.title} fill className="object-cover" />
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold">{product.title}</h3>
-        <p className="text-green-400">${product.price}</p>
-        <p className="text-zinc-400 text-sm">{product.category}</p>
-      </div>
-    </Link>
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+    >
+      <Link
+        href={`/products/${product.id}`}
+        className="group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-black/30 block"
+      >
+        {/* IMAGE */}
+        <div className="relative h-56 w-full overflow-hidden">
+          {!error && product.image_url ? (
+            <Image
+              src={product.image_url}
+              alt={product.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={() => setError(true)}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+              <ImageOff size={42} />
+            </div>
+          )}
+
+          {/* CATEGORY BADGE */}
+          <span className="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10">
+            {product.category}
+          </span>
+        </div>
+
+        {/* CONTENT */}
+        <div className="p-4 space-y-2">
+          <h3 className="font-semibold text-lg truncate text-white">
+            {product.title}
+          </h3>
+
+          <p className="text-green-400 font-bold text-2xl tracking-tight">
+            ${product.price.toLocaleString("es-AR")}
+          </p>
+
+          <p className="text-zinc-500 text-xs">
+            Ver detalles →
+          </p>
+        </div>
+      </Link>
+    </motion.div>
   );
 }

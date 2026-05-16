@@ -43,8 +43,8 @@ export async function GET(req: Request) {
   // Procesar último mensaje
   const formatted = data.map((conv) => ({
     id: conv.id,
-    product_title: conv.products?.title ?? "Producto",
-    product_image: conv.products?.image_url ?? null,
+    product_title: conv.products?.[0]?.title ?? "Producto",
+    product_image: conv.products?.[0]?.image_url ?? null,
     last_message: conv.messages?.[conv.messages.length - 1]?.content ?? "",
     updated_at:
       conv.messages?.[conv.messages.length - 1]?.created_at ??

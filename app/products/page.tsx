@@ -110,76 +110,78 @@ export default function ProductsPage() {
 
   // Cargar productos (paginado)
   async function fetchProducts(reset = false) {
-    if (reset) {
-      setLoading(true);
-      setPage(0);
-    } else {
-      setLoadingMore(true);
-    }
+  if (reset) {
+    setLoading(true);
+    setPage(0);
+  } else {
+    setLoadingMore(true);
+  }
 
-    const from = reset ? 0 : page * limit;
-    const to = from + limit - 1;
+  const from = reset ? 0 : page * limit;
+  const to = from + limit - 1;
 
-    let query = supabase
-      .from("products")
-      .select(
-        `
-        id,
-        title,
-        price,
-        image_url,
-        description,
-        status,
-        category_id,
-        subcategory_id,
-        categories:category_id (name),
-        subcategories:subcategory_id (name)
-      `
-      )
-      .order("created_at", { ascending: false })
-      .range(from, to);
+  let query = supabase
+    .from("products")
+    .select(`
+      id,
+      title,
+      price,
+      image_url,
+      description,
+      status,
+      category_id,
+      subcategory_id,
+      categories:category_id (name),
+      subcategories:subcategory_id (name)
+    `)
+    .order("inserted_at", { ascending: false })
+    .range(from, to);
 
-    // FILTROS
-    if (selectedCategory) {
-      query = query.eq("category_id", selectedCategory);
-    }
+  // FILTRO POR CATEGORÍA
+  if (selectedCategory) {
+    query = query.eq("category_id", selectedCategory);
+  }
 
-    if (selectedSubcategory) {
-      query = query.eq("subcategory_id", selectedSubcategory);
-    }
+  // FILTRO POR SUBCATEGORÍA
+  if (selectedSubcategory) {
+    query = query.eq("subcategory_id", selectedSubcategory);
+  }
 
-    // Mostrar productos sin categoría si no hay filtros
-    if (!selectedCategory && !selectedSubcategory) {
-      query = query.or("category_id.is.null,subcategory_id.is.null");
-    }
+  // BÚSQUEDA
+  if (search.trim() !== "") {
+    query = query.or(
+      `title.ilike.%${search}%,description.ilike.%${search}%`
+    );
+  }
 
-    // BÚSQUEDA
-    if (search.trim() !== "") {
-      query = query.or(
-        `title.ilike.%${search}%,description.ilike.%${search}%`
-      );
-    }
+  // EJECUTAR QUERY UNA SOLA VEZ
+  const { data, error } = await query;
 
-    const { data } = await query;
-
-    if (data) {
-      const mapped = data.map((p) => ({
-        ...p,
-        category_name: p.categories?.[0]?.name || null,
-        subcategory_name: p.subcategories?.[0]?.name || null,
-        is_favorite: favorites.includes(p.id),
-      }));
-
-      if (reset) {
-        setProducts(mapped);
-      } else {
-        setProducts((prev) => [...prev, ...mapped]);
-      }
-    }
-
+  if (error) {
+    console.error(error);
     setLoading(false);
     setLoadingMore(false);
+    return;
   }
+
+  if (data) {
+    const mapped = data.map((p) => ({
+      ...p,
+      category_name: p.categories?.[0]?.name || null,
+      subcategory_name: p.subcategories?.[0]?.name || null,
+      is_favorite: favorites.includes(p.id),
+    }));
+
+    if (reset) {
+      setProducts(mapped);
+    } else {
+      setProducts((prev) => [...prev, ...mapped]);
+    }
+  }
+
+  setLoading(false);
+  setLoadingMore(false);
+}
 
   // Recargar cuando cambian filtros o búsqueda
   useEffect(() => {

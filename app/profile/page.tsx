@@ -5,6 +5,7 @@ import { useSupabase } from "@/components/SupabaseProvider";
 import { supabase } from "@/lib/supabaseClient";
 import { Loader2, Camera } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function ProfilePage() {
@@ -60,15 +61,13 @@ export default function ProfilePage() {
 
     let avatar_url = profile.avatar_url;
 
-    // SUBIR AVATAR
+    // Subir avatar
     if (avatarFile) {
       const fileName = `${user.id}-${Date.now()}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, avatarFile, {
-          upsert: true,
-        });
+        .upload(fileName, avatarFile, { upsert: true });
 
       if (!uploadError) {
         const { data: publicUrl } = supabase.storage
@@ -79,7 +78,7 @@ export default function ProfilePage() {
       }
     }
 
-    // GUARDAR PERFIL
+    // Guardar perfil
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -124,11 +123,10 @@ export default function ProfilePage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      {/* HEADER */}
       <div className="space-y-2">
         <h1 className="text-5xl font-extrabold tracking-tight">Mi perfil</h1>
-        <p className="text-zinc-400 text-lg">
-          Editá tu información personal.
-        </p>
+        <p className="text-zinc-400 text-lg">Editá tu información personal.</p>
       </div>
 
       {/* AVATAR */}
@@ -202,6 +200,14 @@ export default function ProfilePage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-500 text-sm">
           Email: {user.email}
         </div>
+
+        {/* MIS PRODUCTOS */}
+        <Link
+          href="/profile/my-products"
+          className="block text-center bg-zinc-800 hover:bg-zinc-700 transition px-6 py-3 rounded-xl text-white font-medium border border-zinc-700"
+        >
+          Ver mis productos publicados
+        </Link>
 
         {/* CTA */}
         <button

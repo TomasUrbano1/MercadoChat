@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -13,6 +13,8 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const { user } = useSupabase();
 
@@ -20,6 +22,17 @@ export default function Navbar() {
     await supabase.auth.signOut();
     router.refresh();
   }
+
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const links = [
     { href: "/", label: "Inicio" },
@@ -30,7 +43,6 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-zinc-950/60 border-b border-white/10">
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        
         {/* LOGO + BRAND */}
         <Link href="/" className="flex items-center gap-3 group">
           <Image
@@ -62,7 +74,6 @@ export default function Navbar() {
               >
                 {label}
 
-                {/* Indicador activo */}
                 {active && (
                   <motion.div
                     layoutId="active-pill"
@@ -99,34 +110,61 @@ export default function Navbar() {
               </Link>
             </div>
           ) : (
-            <div className="relative group">
-              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold cursor-pointer">
-                {user.email?.[0]?.toUpperCase()}
-              </div>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold cursor-pointer overflow-hidden"
+              >
+                {user.user_metadata?.avatar_url ? (
+                  <Image
+                    src={user.user_metadata.avatar_url}
+                    alt="Avatar"
+                    width={36}
+                    height={36}
+                    className="rounded-full object-cover"
+                  />
+                ) : (
+                  user.email?.[0]?.toUpperCase()
+                )}
+              </button>
 
-              {/* DROPDOWN */}
-              <div className="absolute right-0 mt-3 w-44 bg-zinc-900 border border-white/10 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition">
-                <Link
-                  href="/profile"
-                  className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800 rounded-t-xl"
-                >
-                  Mi perfil
-                </Link>
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-3 w-44 bg-zinc-900 border border-white/10 rounded-xl shadow-xl"
+                  >
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800 rounded-t-xl"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Mi perfil
+                    </Link>
 
-                <Link
-                  href="/chat"
-                  className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800"
-                >
-                  Conversaciones
-                </Link>
+                    <Link
+                      href="/chat"
+                      className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Conversaciones
+                    </Link>
 
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-400/10 rounded-b-xl"
-                >
-                  Cerrar sesión
-                </button>
-              </div>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-400/10 rounded-b-xl"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -215,8 +253,8 @@ export default function Navbar() {
                 </Link>
 
                 <button
-                  onClick={() => {
-                    handleLogout();
+                  onClick={async () => {
+                    await handleLogout();
                     setOpen(false);
                   }}
                   className="text-red-400 hover:text-red-300 transition text-left block"

@@ -10,8 +10,11 @@ interface Product {
   id: string;
   title: string;
   price: number;
-  category: string;
   image_url: string | null;
+
+  // NUEVO
+  category_name?: string | null;
+  subcategory_name?: string | null;
 }
 
 interface Props {
@@ -20,6 +23,11 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const [error, setError] = useState(false);
+
+  const categoryLabel =
+    product.subcategory_name
+      ? `${product.category_name} • ${product.subcategory_name}`
+      : product.category_name || "Sin categoría";
 
   return (
     <motion.div
@@ -48,7 +56,7 @@ export default function ProductCard({ product }: Props) {
 
           {/* CATEGORY BADGE */}
           <span className="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10">
-            {product.category}
+            {categoryLabel}
           </span>
         </div>
 

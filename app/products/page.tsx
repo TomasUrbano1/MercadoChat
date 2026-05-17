@@ -1,28 +1,164 @@
 "use client";
 
+import { useEffect, useState, useRef } from "react";
 import ProductCard from "@/components/ProductCard";
+import { supabase } from "@/lib/supabaseClient";
 import { motion } from "framer-motion";
 
-type Product = {
-  id: string;
-  title: string;
-  price: number;
-  category: string;
-  image_url: string;
-};
-
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    title: "MacBook Pro",
-    price: 1200,
-    category: "Tecnología",
-    image_url:
-      "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
-  },
-];
-
 export default function ProductsPage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const [categories, setCategories] = useState<any[]>([]);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
+
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
+
+  const [search, setSearch] = useState("");
+  const searchRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [page, setPage] = useState(0);
+  const limit = 12;
+
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+
+  // Cargar categorías
+  useEffect(() => {
+    async function loadCategories() {
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (data) setCategories(data);
+    }
+
+    loadCategories();
+  }, []);
+
+  // Cargar subcategorías cuando cambia la categoría
+  useEffect(() => {
+    if (!selectedCategory) {
+      setSubcategories([]);
+      setSelectedSubcategory("");
+      return;
+    }
+
+    async function loadSubcategories() {
+      const { data } = await supabase
+        .from("subcategories")
+        .select("*")
+        .eq("category_id", selectedCategory)
+        .order("name", { ascending: true });
+
+      if (data) setSubcategories(data);
+    }
+
+    loadSubcategories();
+  }, [selectedCategory]);
+
+  // Cargar productos (paginado)
+  async function fetchProducts(reset = false) {
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const from = reset ? 0 : page * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
+      .from("products")
+      .select(
+        `
+        id,
+        title,
+        price,
+        image_url,
+        description,
+        categories:category_id (name),
+        subcategories:subcategory_id (name)
+      `
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (selectedCategory) {
+      query = query.eq("category_id", selectedCategory);
+    }
+
+    if (selectedSubcategory) {
+      query = query.eq("subcategory_id", selectedSubcategory);
+    }
+
+    if (search.trim() !== "") {
+      query = query.or(
+        `title.ilike.%${search}%,description.ilike.%${search}%`
+      );
+    }
+
+    const { data } = await query;
+
+    if (data) {
+      const mapped = data.map((p) => ({
+        ...p,
+        category_name: p.categories?.[0]?.name || null,
+        subcategory_name: p.subcategories?.[0]?.name || null,
+      }));
+
+      if (reset) {
+        setProducts(mapped);
+      } else {
+        setProducts((prev) => [...prev, ...mapped]);
+      }
+    }
+
+    setLoading(false);
+    setLoadingMore(false);
+  }
+
+  // Recargar cuando cambian filtros o búsqueda
+  useEffect(() => {
+    if (searchRef.current) clearTimeout(searchRef.current);
+
+    searchRef.current = setTimeout(() => {
+      fetchProducts(true);
+    }, 300);
+
+    return () => {
+      if (searchRef.current) clearTimeout(searchRef.current);
+    };
+  }, [selectedCategory, selectedSubcategory, search]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && !loadingMore) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 1 }
+    );
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
+
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [loadingMore]);
+
+  // Cargar más cuando cambia la página
+  useEffect(() => {
+    if (page === 0) return;
+    fetchProducts(false);
+  }, [page]);
+
   return (
     <div className="space-y-20">
       {/* HEADER */}
@@ -40,33 +176,92 @@ export default function ProductsPage() {
         </p>
       </motion.header>
 
-      {/* GRID */}
-      <section>
-        <motion.div
-          className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: {},
-            visible: {
-              transition: {
-                staggerChildren: 0.08,
-              },
-            },
+      {/* SEARCH */}
+      <div className="max-w-xl mx-auto">
+        <input
+          type="text"
+          placeholder="Buscar productos..."
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      {/* FILTERS */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <select
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition w-full sm:w-64"
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setSelectedSubcategory("");
           }}
         >
-          {mockProducts.map((product) => (
+          <option value="">Todas las categorías</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition w-full sm:w-64"
+          value={selectedSubcategory}
+          onChange={(e) => setSelectedSubcategory(e.target.value)}
+          disabled={subcategories.length === 0}
+        >
+          <option value="">Todas las subcategorías</option>
+          {subcategories.map((sub) => (
+            <option key={sub.id} value={sub.id}>
+              {sub.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* GRID */}
+      <section>
+        {loading ? (
+          <p className="text-center text-zinc-400">Cargando productos...</p>
+        ) : products.length === 0 ? (
+          <p className="text-center text-zinc-400">
+            No hay productos que coincidan con la búsqueda o los filtros.
+          </p>
+        ) : (
+          <>
             <motion.div
-              key={product.id}
+              className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+              initial="hidden"
+              animate="visible"
               variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.08,
+                  },
+                },
               }}
             >
-              <ProductCard product={product} />
+              {products.map((product) => (
+                <motion.div
+                  key={product.id}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
-        </motion.div>
+
+            {/* Loader para infinite scroll */}
+            <div ref={loaderRef} className="py-10 text-center text-zinc-500">
+              {loadingMore && "Cargando más productos..."}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

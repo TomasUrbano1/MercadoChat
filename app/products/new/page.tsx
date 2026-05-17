@@ -11,32 +11,64 @@ import Image from "next/image";
 export default function NewProductPage() {
   const router = useRouter();
   const { user } = useSupabase();
-  
-
-    useEffect(() => {
-    async function test() {
-      const res = await supabase.storage.from("products").list();
-      console.log("Storage test:", res);
-    }
-    test();
-  }, []);
-
 
   const [loading, setLoading] = useState(false);
+
+  // Imagen
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
+  // Categorías
+  const [categories, setCategories] = useState<any[]>([]);
+  const [subcategories, setSubcategories] = useState<any[]>([]);
+
+  // Form
   const [form, setForm] = useState({
     title: "",
     description: "",
     price: "",
-    category: "",
+    category_id: "",
+    subcategory_id: "",
   });
+
+  // Cargar categorías al montar
+  useEffect(() => {
+    async function loadCategories() {
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (data) setCategories(data);
+    }
+
+    loadCategories();
+  }, []);
+
+  // Cargar subcategorías cuando cambia la categoría
+  useEffect(() => {
+    if (!form.category_id) {
+      setSubcategories([]);
+      return;
+    }
+
+    async function loadSubcategories() {
+      const { data } = await supabase
+        .from("subcategories")
+        .select("*")
+        .eq("category_id", form.category_id)
+        .order("name", { ascending: true });
+
+      if (data) setSubcategories(data);
+    }
+
+    loadSubcategories();
+  }, [form.category_id]);
 
   async function handleSubmit() {
     if (!user) return alert("Tenés que iniciar sesión");
 
-    if (!form.title || !form.price || !form.category) {
+    if (!form.title || !form.price || !form.category_id) {
       return alert("Completá los campos obligatorios");
     }
 
@@ -44,11 +76,11 @@ export default function NewProductPage() {
 
     let image_url = "";
 
-    // SUBIR IMAGEN A SUPABASE STORAGE
+    // SUBIR IMAGEN
     if (imageFile) {
       const fileName = `${Date.now()}-${imageFile.name}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("products")
         .upload(fileName, imageFile);
 
@@ -66,14 +98,15 @@ export default function NewProductPage() {
       image_url = publicUrl.publicUrl;
     }
 
-    // GUARDAR PRODUCTO EN SUPABASE
+    // GUARDAR PRODUCTO
     const { data, error } = await supabase
       .from("products")
       .insert({
         title: form.title,
         description: form.description,
         price: Number(form.price),
-        category: form.category,
+        category_id: form.category_id,
+        subcategory_id: form.subcategory_id || null,
         image_url,
         seller_id: user.id,
       })
@@ -108,19 +141,21 @@ export default function NewProductPage() {
       </div>
 
       <div className="space-y-6">
-        {/* INPUTS */}
+        {/* TÍTULO */}
         <input
           placeholder="Título del producto"
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
           onChange={(e) => setForm({ ...form, title: e.target.value })}
         />
 
+        {/* DESCRIPCIÓN */}
         <textarea
           placeholder="Descripción (opcional)"
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white h-32 focus:border-blue-500 transition"
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
 
+        {/* PRECIO */}
         <input
           type="number"
           placeholder="Precio"
@@ -128,13 +163,41 @@ export default function NewProductPage() {
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
 
-        <input
-          placeholder="Categoría"
+        {/* CATEGORÍA */}
+        <select
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-        />
+          value={form.category_id}
+          onChange={(e) =>
+            setForm({ ...form, category_id: e.target.value, subcategory_id: "" })
+          }
+        >
+          <option value="">Seleccioná una categoría</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
 
-        {/* IMAGE UPLOAD */}
+        {/* SUBCATEGORÍA */}
+        {subcategories.length > 0 && (
+          <select
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+            value={form.subcategory_id}
+            onChange={(e) =>
+              setForm({ ...form, subcategory_id: e.target.value })
+            }
+          >
+            <option value="">Seleccioná una subcategoría</option>
+            {subcategories.map((sub) => (
+              <option key={sub.id} value={sub.id}>
+                {sub.name}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* IMAGEN */}
         <div className="space-y-3">
           <label className="text-zinc-400 text-sm">Imagen del producto</label>
 

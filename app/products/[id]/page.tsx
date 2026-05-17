@@ -141,7 +141,7 @@ export default function ProductDetailPage({ params }: any) {
         .select("id, title, price, image_url, status")
         .eq("seller_id", sellerId)
         .neq("id", currentProductId)
-        .order("created_at", { ascending: false })
+        .order("inserted_at", { ascending: false })
         .limit(6);
 
       if (data) setMoreFromSeller(data);
@@ -282,7 +282,9 @@ export default function ProductDetailPage({ params }: any) {
               src={product.image_url}
               alt={product.title}
               fill
-              className="object-cover"
+              className="object-cover object-center"
+              quality={90}
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
             <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
@@ -347,7 +349,8 @@ export default function ProductDetailPage({ params }: any) {
                     src={product.seller.avatar_url}
                     alt="Vendedor"
                     fill
-                    className="object-cover"
+                    className="object-cover object-center"
+                    quality={90}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
@@ -426,7 +429,9 @@ export default function ProductDetailPage({ params }: any) {
                       src={p.image_url}
                       alt={p.title}
                       fill
-                      className="object-cover"
+                      className="object-cover object-center"
+                      quality={90}
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
@@ -468,7 +473,9 @@ export default function ProductDetailPage({ params }: any) {
                       src={p.image_url}
                       alt={p.title}
                       fill
-                      className="object-cover"
+                      className="object-cover object-center"
+                      quality={90}
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">

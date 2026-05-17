@@ -16,7 +16,6 @@ interface Product {
   category_name?: string | null;
   subcategory_name?: string | null;
 
-  // NUEVO
   is_favorite?: boolean;
   toggleFavorite?: () => void;
 }
@@ -77,7 +76,9 @@ export default function ProductCard({ product }: Props) {
                 src={product.image_url}
                 alt={product.title}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                className="object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                quality={90}
+                sizes="(max-width: 768px) 100vw, 33vw"
                 onError={() => setError(true)}
               />
             ) : (

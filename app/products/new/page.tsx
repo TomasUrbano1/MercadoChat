@@ -31,6 +31,29 @@ export default function NewProductPage() {
     subcategory_id: "",
   });
 
+  // OPTIMIZAR IMAGEN ANTES DE SUBIR
+  async function optimizeImage(file: File): Promise<File> {
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const maxWidth = 1280;
+    const scale = Math.min(1, maxWidth / bitmap.width);
+
+    canvas.width = bitmap.width * scale;
+    canvas.height = bitmap.height * scale;
+
+    ctx!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/webp", 0.9)
+    );
+
+    return new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
+      type: "image/webp",
+    });
+  }
+
   // Cargar categorías al montar
   useEffect(() => {
     async function loadCategories() {
@@ -77,13 +100,14 @@ export default function NewProductPage() {
 
     let image_url = "";
 
-    // SUBIR IMAGEN
+    // SUBIR IMAGEN OPTIMIZADA
     if (imageFile) {
-      const fileName = `${Date.now()}-${imageFile.name}`;
+      const optimized = await optimizeImage(imageFile);
+      const fileName = `${Date.now()}-${optimized.name}`;
 
       const { error: uploadError } = await supabase.storage
         .from("products")
-        .upload(fileName, imageFile);
+        .upload(fileName, optimized);
 
       if (uploadError) {
         console.error(uploadError);
@@ -231,7 +255,8 @@ export default function NewProductPage() {
                   src={preview}
                   alt="Preview"
                   fill
-                  className="object-cover"
+                  className="object-cover object-center"
+                  quality={90}
                 />
               </div>
             )}

@@ -11,6 +11,16 @@ import Image from "next/image";
 export default function NewProductPage() {
   const router = useRouter();
   const { user } = useSupabase();
+  
+
+    useEffect(() => {
+    async function test() {
+      const res = await supabase.storage.from("products").list();
+      console.log("Storage test:", res);
+    }
+    test();
+  }, []);
+
 
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);

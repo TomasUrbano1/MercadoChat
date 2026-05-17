@@ -8,11 +8,13 @@ import { Loader2, ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-export default function NewProductPage() {
+export default function EditProductPage({ params }: any) {
+  const { id } = params;
   const router = useRouter();
   const { user } = useSupabase();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Imagen
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -29,9 +31,10 @@ export default function NewProductPage() {
     price: "",
     category_id: "",
     subcategory_id: "",
+    image_url: "",
   });
 
-  // Cargar categorías al montar
+  // Cargar categorías
   useEffect(() => {
     async function loadCategories() {
       const { data } = await supabase
@@ -44,6 +47,43 @@ export default function NewProductPage() {
 
     loadCategories();
   }, []);
+
+  // Cargar producto
+  useEffect(() => {
+    async function loadProduct() {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error || !data) {
+        alert("Producto no encontrado");
+        router.push("/products");
+        return;
+      }
+
+      if (data.seller_id !== user?.id) {
+        alert("No podés editar este producto");
+        router.push("/products");
+        return;
+      }
+
+      setForm({
+        title: data.title,
+        description: data.description || "",
+        price: data.price,
+        category_id: data.category_id || "",
+        subcategory_id: data.subcategory_id || "",
+        image_url: data.image_url || "",
+      });
+
+      setPreview(data.image_url || null);
+      setLoading(false);
+    }
+
+    if (user) loadProduct();
+  }, [id, user]);
 
   // Cargar subcategorías cuando cambia la categoría
   useEffect(() => {
@@ -66,18 +106,18 @@ export default function NewProductPage() {
     loadSubcategories();
   }, [form.category_id]);
 
-  async function handleSubmit() {
+  async function handleSave() {
     if (!user) return alert("Tenés que iniciar sesión");
 
     if (!form.title || !form.price || !form.category_id) {
       return alert("Completá los campos obligatorios");
     }
 
-    setLoading(true);
+    setSaving(true);
 
-    let image_url = "";
+    let image_url = form.image_url;
 
-    // SUBIR IMAGEN
+    // SUBIR NUEVA IMAGEN
     if (imageFile) {
       const fileName = `${Date.now()}-${imageFile.name}`;
 
@@ -88,7 +128,7 @@ export default function NewProductPage() {
       if (uploadError) {
         console.error(uploadError);
         alert("Error subiendo imagen");
-        setLoading(false);
+        setSaving(false);
         return;
       }
 
@@ -99,30 +139,36 @@ export default function NewProductPage() {
       image_url = publicUrl.publicUrl;
     }
 
-    // GUARDAR PRODUCTO
-    const { data, error } = await supabase
+    // ACTUALIZAR PRODUCTO
+    const { error } = await supabase
       .from("products")
-      .insert({
+      .update({
         title: form.title,
-        description: form.description || "",
+        description: form.description,
         price: Number(form.price),
         category_id: form.category_id,
         subcategory_id: form.subcategory_id || null,
         image_url,
-        seller_id: user.id,
       })
-      .select()
-      .single();
+      .eq("id", id);
 
-    setLoading(false);
+    setSaving(false);
 
     if (error) {
       console.error(error);
-      alert("Error publicando producto");
+      alert("Error guardando cambios");
       return;
     }
 
-    router.push(`/products/${data.id}`);
+    router.push(`/products/${id}`);
+  }
+
+  if (loading) {
+    return (
+      <p className="text-center text-zinc-400 mt-20 animate-pulse">
+        Cargando producto...
+      </p>
+    );
   }
 
   return (
@@ -134,10 +180,10 @@ export default function NewProductPage() {
     >
       <div className="space-y-2">
         <h1 className="text-5xl font-extrabold tracking-tight">
-          Nuevo producto
+          Editar producto
         </h1>
         <p className="text-zinc-400 text-lg">
-          Publicá tu artículo en minutos.
+          Modificá la información de tu publicación.
         </p>
       </div>
 
@@ -146,13 +192,15 @@ export default function NewProductPage() {
         <input
           placeholder="Título del producto"
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
         />
 
         {/* DESCRIPCIÓN */}
         <textarea
-          placeholder="Descripción (opcional)"
+          placeholder="Descripción"
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white h-32 focus:border-blue-500 transition"
+          value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
 
@@ -161,6 +209,7 @@ export default function NewProductPage() {
           type="number"
           placeholder="Precio"
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
 
@@ -240,12 +289,12 @@ export default function NewProductPage() {
 
         {/* CTA */}
         <button
-          onClick={handleSubmit}
-          disabled={loading}
+          onClick={handleSave}
+          disabled={saving}
           className="bg-blue-600 hover:bg-blue-500 transition px-6 py-4 rounded-xl text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50 w-full text-lg shadow-lg shadow-blue-600/20"
         >
-          {loading && <Loader2 className="animate-spin" size={20} />}
-          Publicar producto
+          {saving && <Loader2 className="animate-spin" size={20} />}
+          Guardar cambios
         </button>
       </div>
     </motion.div>

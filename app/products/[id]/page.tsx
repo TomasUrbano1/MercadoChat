@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ImageOff, MessageCircle } from "lucide-react";
+import { ImageOff, MessageCircle, Trash2, Pencil, Heart } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 interface Product {
+  category_id: any;
   id: string;
   title: string;
   price: number;
@@ -24,6 +25,8 @@ interface Product {
     full_name: string | null;
     avatar_url: string | null;
   };
+
+  status?: "available" | "reserved" | "sold";
 }
 
 export default function ProductDetailPage({ params }: any) {
@@ -35,6 +38,9 @@ export default function ProductDetailPage({ params }: any) {
   const [moreFromSeller, setMoreFromSeller] = useState<any[]>([]);
   const [related, setRelated] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  const [isFavorite, setIsFavorite] = useState(false);
 
   // Cargar producto
   useEffect(() => {
@@ -47,6 +53,7 @@ export default function ProductDetailPage({ params }: any) {
           price,
           description,
           image_url,
+          status,
           categories:category_id (name),
           subcategories:subcategory_id (name),
           seller:profiles!products_seller_id_fkey (
@@ -76,6 +83,51 @@ export default function ProductDetailPage({ params }: any) {
     load();
   }, [id]);
 
+  // Cargar favoritos del usuario
+  useEffect(() => {
+    if (!user || !product) return;
+
+    const productId = product.id;
+
+    async function loadFavorite() {
+      const { data } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("product_id", productId)
+        .maybeSingle();
+
+      setIsFavorite(!!data);
+    }
+
+    loadFavorite();
+  }, [user, product]);
+
+  // Toggle favorito
+  async function toggleFavorite() {
+    if (!user) return router.push("/auth/login");
+    if (!product) return;
+
+    const productId = product.id;
+
+    if (isFavorite) {
+      await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("product_id", productId);
+
+      setIsFavorite(false);
+    } else {
+      await supabase.from("favorites").insert({
+        user_id: user.id,
+        product_id: productId,
+      });
+
+      setIsFavorite(true);
+    }
+  }
+
   // Cargar más productos del vendedor
   useEffect(() => {
     if (!product) return;
@@ -86,7 +138,7 @@ export default function ProductDetailPage({ params }: any) {
     async function loadMore() {
       const { data } = await supabase
         .from("products")
-        .select("id, title, price, image_url")
+        .select("id, title, price, image_url, status")
         .eq("seller_id", sellerId)
         .neq("id", currentProductId)
         .order("created_at", { ascending: false })
@@ -98,17 +150,19 @@ export default function ProductDetailPage({ params }: any) {
     loadMore();
   }, [product]);
 
-  // Cargar productos relacionados por categoría
+  // Cargar productos relacionados
   useEffect(() => {
     if (!product) return;
 
-    const categoryId = product.category_name ?? "";
+    const categoryId = product.category_id;
     const currentProductId = product.id;
+
+    if (!categoryId) return;
 
     async function loadRelated() {
       const { data } = await supabase
         .from("products")
-        .select("id, title, price, image_url")
+        .select("id, title, price, image_url, status")
         .eq("category_id", categoryId)
         .neq("id", currentProductId)
         .limit(6);
@@ -122,6 +176,10 @@ export default function ProductDetailPage({ params }: any) {
   async function handleChat() {
     if (!user) return router.push("/auth/login");
     if (!product) return;
+
+    if (product.status === "sold") {
+      return alert("Este producto ya fue vendido");
+    }
 
     if (user.id === product?.seller_id) {
       return alert("No podés chatear con vos mismo");
@@ -142,6 +200,29 @@ export default function ProductDetailPage({ params }: any) {
     router.push(`/chat/${data.id}`);
   }
 
+  async function handleDelete() {
+    if (!product) return;
+
+    const confirmDelete = confirm("¿Seguro que querés eliminar este producto?");
+    if (!confirmDelete) return;
+
+    setDeleting(true);
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", product.id);
+
+    setDeleting(false);
+
+    if (error) {
+      alert("Error eliminando producto");
+      return;
+    }
+
+    router.push("/profile/my-products");
+  }
+
   if (loading || !product) {
     return (
       <p className="text-center text-zinc-400 mt-20 animate-pulse">
@@ -153,6 +234,18 @@ export default function ProductDetailPage({ params }: any) {
   const categoryLabel = product.subcategory_name
     ? `${product.category_name} • ${product.subcategory_name}`
     : product.category_name || "Sin categoría";
+
+  const statusColors: Record<string, string> = {
+    available: "bg-green-600/80 text-white border-green-400/30",
+    reserved: "bg-yellow-600/80 text-white border-yellow-400/30",
+    sold: "bg-red-600/80 text-white border-red-400/30",
+  };
+
+  const statusLabel: Record<string, string> = {
+    available: "Disponible",
+    reserved: "Reservado",
+    sold: "Vendido",
+  };
 
   return (
     <div className="space-y-20">
@@ -169,6 +262,21 @@ export default function ProductDetailPage({ params }: any) {
           whileHover={{ scale: 1.01 }}
           transition={{ duration: 0.3 }}
         >
+          {/* ❤️ FAVORITE BUTTON */}
+          {user && (
+            <button
+              onClick={toggleFavorite}
+              className="absolute top-4 right-4 z-20 p-3 rounded-full bg-black/60 backdrop-blur border border-white/10 hover:bg-black/80 transition"
+            >
+              <Heart
+                size={24}
+                className={`transition ${
+                  isFavorite ? "fill-red-500 text-red-500" : "text-white"
+                }`}
+              />
+            </button>
+          )}
+
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -182,9 +290,19 @@ export default function ProductDetailPage({ params }: any) {
             </div>
           )}
 
+          {/* CATEGORY */}
           <span className="absolute top-4 left-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10">
             {categoryLabel}
           </span>
+
+          {/* STATUS BADGE */}
+          {product.status && (
+            <span
+              className={`absolute bottom-4 left-4 px-3 py-1 rounded-full text-xs font-medium border ${statusColors[product.status]}`}
+            >
+              {statusLabel[product.status]}
+            </span>
+          )}
         </motion.div>
 
         {/* INFO */}
@@ -203,6 +321,19 @@ export default function ProductDetailPage({ params }: any) {
           <p className="text-zinc-300 leading-relaxed text-lg">
             {product.description || "Sin descripción."}
           </p>
+
+          {/* ESTADO */}
+          {product.status === "reserved" && (
+            <p className="text-yellow-400 font-semibold">
+              Este producto está reservado.
+            </p>
+          )}
+
+          {product.status === "sold" && (
+            <p className="text-red-400 font-semibold">
+              Este producto ya fue vendido.
+            </p>
+          )}
 
           {/* SELLER */}
           {product.seller && (
@@ -236,8 +367,33 @@ export default function ProductDetailPage({ params }: any) {
 
           {/* CTA */}
           {user?.id === product.seller_id ? (
-            <p className="text-zinc-500 italic">
-              Este producto es tuyo. No podés iniciar un chat.
+            <div className="space-y-4">
+              <p className="text-zinc-500 italic">
+                Este producto es tuyo.
+              </p>
+
+              <div className="flex gap-4">
+                <Link
+                  href={`/products/edit/${product.id}`}
+                  className="inline-flex items-center gap-2 bg-zinc-700 hover:bg-zinc-600 transition px-6 py-3 rounded-xl font-medium text-white text-lg"
+                >
+                  <Pencil size={20} />
+                  Editar
+                </Link>
+
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 transition px-6 py-3 rounded-xl font-medium text-white text-lg disabled:opacity-50"
+                >
+                  <Trash2 size={20} />
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          ) : product.status === "sold" ? (
+            <p className="text-red-400 font-semibold">
+              Este producto ya fue vendido.
             </p>
           ) : (
             <motion.button

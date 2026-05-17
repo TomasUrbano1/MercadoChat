@@ -5,7 +5,7 @@ import { useSupabase } from "@/components/SupabaseProvider";
 import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
 import Image from "next/image";
-import { ImageOff, Trash2, Pencil } from "lucide-react";
+import { ImageOff, Trash2, Pencil, Copy } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function MyProductsPage() {
@@ -13,6 +13,8 @@ export default function MyProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const totalValue = products.reduce((acc, p) => acc + p.price, 0);
 
@@ -27,6 +29,10 @@ export default function MyProductsPage() {
           title,
           price,
           image_url,
+          description,
+          category_id,
+          subcategory_id,
+          status,
           categories:category_id (name),
           subcategories:subcategory_id (name)
         `)
@@ -65,6 +71,59 @@ export default function MyProductsPage() {
 
     setProducts((prev) => prev.filter((p) => p.id !== id));
     setDeleting(null);
+  }
+
+  async function handleDuplicate(product: any) {
+    const confirmDup = confirm("¿Querés duplicar este producto?");
+    if (!confirmDup) return;
+
+    setDuplicating(product.id);
+
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        title: product.title + " (copia)",
+        description: product.description || "",
+        price: product.price,
+        image_url: product.image_url,
+        category_id: product.category_id || null,
+        subcategory_id: product.subcategory_id || null,
+        seller_id: user?.id,
+        status: "available",
+      })
+      .select()
+      .single();
+
+    setDuplicating(null);
+
+    if (error) {
+      alert("Error duplicando producto");
+      return;
+    }
+
+    window.location.href = `/products/edit/${data.id}`;
+  }
+
+  async function handleStatusChange(id: string, newStatus: string) {
+    setUpdatingStatus(id);
+
+    const { error } = await supabase
+      .from("products")
+      .update({ status: newStatus })
+      .eq("id", id);
+
+    setUpdatingStatus(null);
+
+    if (error) {
+      alert("Error actualizando estado");
+      return;
+    }
+
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, status: newStatus } : p
+      )
+    );
   }
 
   if (!user) {
@@ -180,6 +239,7 @@ export default function MyProductsPage() {
 
               {/* ACTIONS */}
               <div className="absolute top-3 right-3 flex gap-2">
+                {/* EDIT */}
                 <Link
                   href={`/products/edit/${p.id}`}
                   className="p-2 bg-zinc-900 border border-zinc-700 rounded-xl hover:bg-zinc-800 transition"
@@ -187,6 +247,16 @@ export default function MyProductsPage() {
                   <Pencil size={18} className="text-zinc-300" />
                 </Link>
 
+                {/* DUPLICATE */}
+                <button
+                  onClick={() => handleDuplicate(p)}
+                  disabled={duplicating === p.id}
+                  className="p-2 bg-blue-900/40 border border-blue-800 rounded-xl hover:bg-blue-900/60 transition disabled:opacity-50"
+                >
+                  <Copy size={18} className="text-blue-400" />
+                </button>
+
+                {/* DELETE */}
                 <button
                   onClick={() => handleDelete(p.id)}
                   disabled={deleting === p.id}
@@ -194,6 +264,22 @@ export default function MyProductsPage() {
                 >
                   <Trash2 size={18} className="text-red-400" />
                 </button>
+              </div>
+
+              {/* 🔥 STATUS SELECTOR */}
+              <div className="absolute bottom-3 left-3">
+                <select
+                  value={p.status || "available"}
+                  disabled={updatingStatus === p.id}
+                  onChange={(e) =>
+                    handleStatusChange(p.id, e.target.value)
+                  }
+                  className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs px-2 py-1 rounded-lg hover:border-zinc-500 transition"
+                >
+                  <option value="available">Disponible</option>
+                  <option value="reserved">Reservado</option>
+                  <option value="sold">Vendido</option>
+                </select>
               </div>
             </motion.div>
           ))}

@@ -3,10 +3,15 @@
 import { useEffect, useState, useRef } from "react";
 import ProductCard from "@/components/ProductCard";
 import { supabase } from "@/lib/supabaseClient";
+import { useSupabase } from "@/components/SupabaseProvider";
 import { motion } from "framer-motion";
 
 export default function ProductsPage() {
+  const { user } = useSupabase();
+
   const [products, setProducts] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -22,7 +27,51 @@ export default function ProductsPage() {
   const [page, setPage] = useState(0);
   const limit = 12;
 
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
   const loaderRef = useRef<HTMLDivElement | null>(null);
+
+  // Cargar favoritos del usuario
+  useEffect(() => {
+    if (!user) return;
+
+    async function loadFavorites() {
+      const { data } = await supabase
+        .from("favorites")
+        .select("product_id")
+        .eq("user_id", user.id);
+
+      if (data) {
+        setFavorites(data.map((f) => f.product_id));
+      }
+    }
+
+    loadFavorites();
+  }, [user]);
+
+  // Toggle favorito
+  async function toggleFavorite(productId: string) {
+    if (!user) return alert("Tenés que iniciar sesión");
+
+    const isFav = favorites.includes(productId);
+
+    if (isFav) {
+      await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("product_id", productId);
+
+      setFavorites((prev) => prev.filter((id) => id !== productId));
+    } else {
+      await supabase.from("favorites").insert({
+        user_id: user.id,
+        product_id: productId,
+      });
+
+      setFavorites((prev) => [...prev, productId]);
+    }
+  }
 
   // Cargar categorías
   useEffect(() => {
@@ -80,6 +129,9 @@ export default function ProductsPage() {
         price,
         image_url,
         description,
+        status,
+        category_id,
+        subcategory_id,
         categories:category_id (name),
         subcategories:subcategory_id (name)
       `
@@ -87,6 +139,7 @@ export default function ProductsPage() {
       .order("created_at", { ascending: false })
       .range(from, to);
 
+    // FILTROS
     if (selectedCategory) {
       query = query.eq("category_id", selectedCategory);
     }
@@ -95,6 +148,12 @@ export default function ProductsPage() {
       query = query.eq("subcategory_id", selectedSubcategory);
     }
 
+    // Mostrar productos sin categoría si no hay filtros
+    if (!selectedCategory && !selectedSubcategory) {
+      query = query.or("category_id.is.null,subcategory_id.is.null");
+    }
+
+    // BÚSQUEDA
     if (search.trim() !== "") {
       query = query.or(
         `title.ilike.%${search}%,description.ilike.%${search}%`
@@ -108,6 +167,7 @@ export default function ProductsPage() {
         ...p,
         category_name: p.categories?.[0]?.name || null,
         subcategory_name: p.subcategories?.[0]?.name || null,
+        is_favorite: favorites.includes(p.id),
       }));
 
       if (reset) {
@@ -132,7 +192,7 @@ export default function ProductsPage() {
     return () => {
       if (searchRef.current) clearTimeout(searchRef.current);
     };
-  }, [selectedCategory, selectedSubcategory, search]);
+  }, [selectedCategory, selectedSubcategory, search, favorites]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -158,6 +218,11 @@ export default function ProductsPage() {
     if (page === 0) return;
     fetchProducts(false);
   }, [page]);
+
+  // Filtrar favoritos
+  const visibleProducts = showFavoritesOnly
+    ? products.filter((p) => favorites.includes(p.id))
+    : products;
 
   return (
     <div className="space-y-20">
@@ -185,6 +250,20 @@ export default function ProductsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+      </div>
+
+      {/* FAVORITOS TOGGLE */}
+      <div className="flex justify-center">
+        <button
+          onClick={() => setShowFavoritesOnly((prev) => !prev)}
+          className={`px-6 py-2 rounded-xl border transition ${
+            showFavoritesOnly
+              ? "bg-blue-600 border-blue-500 text-white"
+              : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500"
+          }`}
+        >
+          {showFavoritesOnly ? "Mostrar todos" : "Mostrar favoritos"}
+        </button>
       </div>
 
       {/* FILTERS */}
@@ -224,7 +303,7 @@ export default function ProductsPage() {
       <section>
         {loading ? (
           <p className="text-center text-zinc-400">Cargando productos...</p>
-        ) : products.length === 0 ? (
+        ) : visibleProducts.length === 0 ? (
           <p className="text-center text-zinc-400">
             No hay productos que coincidan con la búsqueda o los filtros.
           </p>
@@ -243,7 +322,7 @@ export default function ProductsPage() {
                 },
               }}
             >
-              {products.map((product) => (
+              {visibleProducts.map((product) => (
                 <motion.div
                   key={product.id}
                   variants={{
@@ -251,7 +330,13 @@ export default function ProductsPage() {
                     visible: { opacity: 1, y: 0 },
                   }}
                 >
-                  <ProductCard product={product} />
+                  <ProductCard
+                    product={{
+                      ...product,
+                      is_favorite: favorites.includes(product.id),
+                      toggleFavorite: () => toggleFavorite(product.id),
+                    }}
+                  />
                 </motion.div>
               ))}
             </motion.div>

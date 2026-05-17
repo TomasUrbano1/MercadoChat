@@ -29,7 +29,7 @@ export default function ProfilePage() {
     if (!user) return;
 
     async function load() {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
@@ -43,6 +43,7 @@ export default function ProfilePage() {
           province: data.province || "",
           avatar_url: data.avatar_url || "",
         });
+
         setPreview(data.avatar_url || null);
       }
 
@@ -197,7 +198,7 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* EMAIL (solo lectura) */}
+        {/* EMAIL */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-500 text-sm">
           Email: {user.email}
         </div>

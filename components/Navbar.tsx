@@ -16,7 +16,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const { user } = useSupabase();
+  const { user, profile } = useSupabase(); // ← AHORA TENÉS PROFILE
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -43,6 +43,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-zinc-950/60 border-b border-white/10">
       <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        
         {/* LOGO + BRAND */}
         <Link href="/" className="flex items-center gap-3 group">
           <Image
@@ -115,9 +116,10 @@ export default function Navbar() {
                 onClick={() => setMenuOpen((prev) => !prev)}
                 className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold cursor-pointer overflow-hidden"
               >
-                {user.user_metadata?.avatar_url ? (
+                {/* 🔥 AHORA SÍ MUESTRA TU FOTO REAL */}
+                {profile?.avatar_url ? (
                   <Image
-                    src={user.user_metadata.avatar_url}
+                    src={profile.avatar_url}
                     alt="Avatar"
                     width={36}
                     height={36}
@@ -215,7 +217,6 @@ export default function Navbar() {
               Publicar producto
             </Link>
 
-            {/* AUTH MOBILE */}
             {!user ? (
               <>
                 <Link

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 interface SupabaseContextType {
   supabase: typeof supabase;
   user: any;
+  profile: any;
 }
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(
@@ -18,6 +19,7 @@ export default function SupabaseProvider({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   // Obtener sesión inicial
   useEffect(() => {
@@ -37,8 +39,28 @@ export default function SupabaseProvider({
     };
   }, []);
 
+  // Cargar perfil desde la tabla "profiles"
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+
+    async function loadProfile() {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      setProfile(data ?? null);
+    }
+
+    loadProfile();
+  }, [user]);
+
   return (
-    <SupabaseContext.Provider value={{ supabase, user }}>
+    <SupabaseContext.Provider value={{ supabase, user, profile }}>
       {children}
     </SupabaseContext.Provider>
   );

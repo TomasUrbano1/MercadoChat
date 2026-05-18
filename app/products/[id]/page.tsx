@@ -173,32 +173,39 @@ export default function ProductDetailPage({ params }: any) {
     loadRelated();
   }, [product]);
 
-  async function handleChat() {
-    if (!user) return router.push("/auth/login");
-    if (!product) return;
+ async function handleChat() {
+  if (!user) return router.push("/auth/login");
+  if (!product) return;
 
-    if (product.status === "sold") {
-      return alert("Este producto ya fue vendido");
-    }
-
-    if (user.id === product?.seller_id) {
-      return alert("No podés chatear con vos mismo");
-    }
-
-    const { data, error } = await supabase
-      .from("conversations")
-      .insert({
-        buyer_id: user.id,
-        seller_id: product?.seller_id,
-        product_id: product?.id,
-      })
-      .select()
-      .single();
-
-    if (error) return alert("Error creando conversación");
-
-    router.push(`/chat/${data.id}`);
+  if (product.status === "sold") {
+    return alert("Este producto ya fue vendido");
   }
+
+  if (user.id === product?.seller_id) {
+    return alert("No podés chatear con vos mismo");
+  }
+
+  // 🔥 LLAMADA CORRECTA: a tu API, NO a Supabase directo
+  const res = await fetch("/api/conversations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      buyer_id: user.id,
+      seller_id: product.seller_id,
+      product_id: product.id,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    console.error("Error creando conversación:", data.error);
+    return alert("Error creando conversación");
+  }
+
+  // Redirigir al chat
+  router.push(`/chat/${data.conversation.id}`);
+}
 
   async function handleDelete() {
     if (!product) return;

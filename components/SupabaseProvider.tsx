@@ -7,6 +7,8 @@ interface SupabaseContextType {
   supabase: typeof supabase;
   user: any;
   profile: any;
+  isOnline: boolean;
+  lastSeen: string | null;
 }
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(
@@ -20,8 +22,10 @@ export default function SupabaseProvider({
 }) {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
 
-  // Obtener sesión inicial
+  // 🔥 Obtener sesión inicial
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
@@ -39,7 +43,7 @@ export default function SupabaseProvider({
     };
   }, []);
 
-  // Cargar perfil desde la tabla "profiles"
+  // 🔥 Cargar perfil desde la tabla "profiles"
   useEffect(() => {
     if (!user) {
       setProfile(null);
@@ -62,7 +66,7 @@ export default function SupabaseProvider({
   // 🔄 Escuchar actualizaciones del perfil (cuando se guarda en ProfilePage)
   useEffect(() => {
     function handleProfileUpdate(e: any) {
-      setProfile(e.detail); // actualiza el contexto global
+      setProfile(e.detail);
     }
 
     window.addEventListener("profileUpdated", handleProfileUpdate);
@@ -70,8 +74,41 @@ export default function SupabaseProvider({
       window.removeEventListener("profileUpdated", handleProfileUpdate);
   }, []);
 
+  // 🔥 Presencia: marcar online/offline y actualizar last_seen_at
+  useEffect(() => {
+    if (!user) return;
+
+    const updatePresence = async (online: boolean) => {
+      setIsOnline(online);
+      const now = new Date().toISOString();
+      setLastSeen(now);
+
+      await supabase
+        .from("profiles")
+        .update({
+          is_online: online,
+          last_seen_at: now,
+        })
+        .eq("id", user.id);
+    };
+
+    // Marcar online al entrar
+    updatePresence(true);
+
+    // Marcar offline al salir
+    const handleUnload = () => updatePresence(false);
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      updatePresence(false);
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, [user]);
+
   return (
-    <SupabaseContext.Provider value={{ supabase, user, profile }}>
+    <SupabaseContext.Provider
+      value={{ supabase, user, profile, isOnline, lastSeen }}
+    >
       {children}
     </SupabaseContext.Provider>
   );

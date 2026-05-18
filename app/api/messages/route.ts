@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin"; // client backend con service_role
 
-// GET /api/messages?conversationId=xxx
+// 🔥 GET /api/messages?conversationId=xxx
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const conversationId = searchParams.get("conversationId");
@@ -13,6 +13,7 @@ export async function GET(req: Request) {
     );
   }
 
+  // 1️⃣ Obtener mensajes ordenados
   const { data, error } = await supabaseAdmin
     .from("messages")
     .select("*")
@@ -24,10 +25,22 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 2️⃣ Marcar como vistos (seen_at) para el receptor
+  // ⚠️ Esto se hace automáticamente cuando el usuario abre la conversación
+  const { error: seenError } = await supabaseAdmin
+    .from("messages")
+    .update({ seen_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .is("seen_at", null);
+
+  if (seenError) {
+    console.error("Error updating seen_at:", seenError.message);
+  }
+
   return NextResponse.json(data);
 }
 
-// POST /api/messages
+// 🔥 POST /api/messages
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -40,10 +53,12 @@ export async function POST(req: Request) {
       );
     }
 
+    // 1️⃣ Crear mensaje nuevo
     const newMessage = {
       content,
-      sender_id,               // ← 🔥 ahora viene del frontend
+      sender_id,
       conversation_id: conversationId,
+      delivered_at: new Date().toISOString(), // 🔥 se marca como entregado al insertar
     };
 
     const { data, error } = await supabaseAdmin
@@ -57,8 +72,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    // 2️⃣ Actualizar updated_at de la conversación
+    const { error: convError } = await supabaseAdmin
+      .from("conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", conversationId);
 
+    if (convError) {
+      console.error("Error updating conversation timestamp:", convError.message);
+    }
+
+    return NextResponse.json(data);
   } catch (err: any) {
     console.error("Unexpected error:", err.message);
     return NextResponse.json(

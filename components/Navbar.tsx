@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, MessageCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,6 +17,9 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const { user, profile } = useSupabase();
+
+  // 🔥 contador de mensajes no leídos
+  const [unreadCount, setUnreadCount] = useState(0);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -33,6 +36,53 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // 🔥 Cargar cantidad inicial de mensajes no leídos
+  useEffect(() => {
+    if (!user) return;
+
+    async function loadUnread() {
+      const { data } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("seen_at", null)
+        .neq("sender_id", user.id);
+
+      setUnreadCount(data?.length ?? 0);
+    }
+
+    loadUnread();
+  }, [user]);
+
+ useEffect(() => {
+  if (!user) return;
+
+  const channel = supabase
+    .channel("navbar-unread-messages")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+      },
+      (payload) => {
+        const msg = payload.new;
+
+        // si el mensaje NO es mío → sumar
+        if (msg.sender_id !== user.id) {
+          setUnreadCount((prev) => prev + 1);
+        }
+      }
+    )
+    .subscribe();
+
+  // ✅ cleanup sincrónico
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}, [user]);
+
 
   const links = [
     { href: "/", label: "Inicio" },
@@ -73,7 +123,20 @@ export default function Navbar() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                {label}
+                <div className="flex items-center gap-1">
+                  {label}
+
+                  {/* 🔥 Badge en el link de Chat */}
+                  {href === "/chat" && unreadCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="ml-1 bg-blue-600 text-white text-[10px] px-2 py-[2px] rounded-full"
+                    >
+                      {unreadCount}
+                    </motion.span>
+                  )}
+                </div>
 
                 {active && (
                   <motion.div
@@ -147,10 +210,17 @@ export default function Navbar() {
 
                     <Link
                       href="/chat"
-                      className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800"
+                      className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
                       onClick={() => setMenuOpen(false)}
                     >
                       Conversaciones
+
+                      {/* 🔥 Badge también en el menú del avatar */}
+                      {unreadCount > 0 && (
+                        <span className="bg-blue-600 text-white text-[10px] px-2 py-[2px] rounded-full">
+                          {unreadCount}
+                        </span>
+                      )}
                     </Link>
 
                     <button
@@ -202,7 +272,16 @@ export default function Navbar() {
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
-                  {label}
+                  <div className="flex items-center gap-2">
+                    {label}
+
+                    {/* 🔥 Badge en mobile */}
+                    {href === "/chat" && unreadCount > 0 && (
+                      <span className="bg-blue-600 text-white text-[10px] px-2 py-[2px] rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </Link>
               );
             })}
@@ -246,9 +325,15 @@ export default function Navbar() {
                 <Link
                   href="/chat"
                   onClick={() => setOpen(false)}
-                  className="text-zinc-400 hover:text-white transition block"
+                  className="text-zinc-400 hover:text-white transition block flex items-center gap-2"
                 >
                   Conversaciones
+
+                  {unreadCount > 0 && (
+                    <span className="bg-blue-600 text-white text-[10px] px-2 py-[2px] rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Link>
 
                 <button

@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // Cargar perfil
+  // 🔥 Cargar perfil
   useEffect(() => {
     if (!user) return;
 
@@ -54,6 +54,7 @@ export default function ProfilePage() {
     load();
   }, [user]);
 
+  // 🔥 Guardar perfil
   async function handleSave() {
     if (!user) return;
 
@@ -61,7 +62,7 @@ export default function ProfilePage() {
 
     let avatar_url = profile.avatar_url;
 
-    // Subir avatar
+    // 🔥 Subir avatar si cambió
     if (avatarFile) {
       const fileName = `${user.id}-${Date.now()}`;
 
@@ -74,11 +75,11 @@ export default function ProfilePage() {
           .from("avatars")
           .getPublicUrl(fileName);
 
-        avatar_url = publicUrl.publicUrl;
+        avatar_url = `${publicUrl.publicUrl}?v=${Date.now()}`; // cache-busting
       }
     }
 
-    // Guardar perfil
+    // 🔥 Guardar perfil + presencia
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -87,6 +88,8 @@ export default function ProfilePage() {
         city: profile.city,
         province: profile.province,
         avatar_url,
+        // presencia (se actualiza también desde SupabaseProvider)
+        last_seen_at: new Date().toISOString(),
       })
       .eq("id", user.id);
 
@@ -97,7 +100,7 @@ export default function ProfilePage() {
       return;
     }
 
-    // 🔄 Actualizar el perfil global (para que la Navbar se refresque)
+    // 🔥 Actualizar el contexto global
     const { data: updatedProfile } = await supabase
       .from("profiles")
       .select("*")

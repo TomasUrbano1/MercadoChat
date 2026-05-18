@@ -10,6 +10,8 @@ interface Message {
   content: string;
   sender_id: string;
   created_at: string;
+  delivered_at?: string | null;
+  seen_at?: string | null;
 }
 
 interface ChatWindowProps {
@@ -24,14 +26,18 @@ export default function ChatWindow({
   const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [typing, setTyping] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<Message[]>([]);
+  messagesRef.current = messages;
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Cargar historial + realtime
+  // 🔥 Cargar historial + marcar como visto
   useEffect(() => {
     async function loadMessages() {
       setLoading(true);
@@ -46,38 +52,59 @@ export default function ChatWindow({
     }
 
     loadMessages();
+  }, [conversationId]);
 
-    // Realtime
+  // 🔥 Realtime mensajes + estados
+  useEffect(() => {
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const msg = payload.new as Message;
+
+          setMessages((prev) => {
+            const exists = prev.find((m) => m.id === msg.id);
+
+            // INSERT → agregar
+            if (payload.eventType === "INSERT" && !exists) {
+              return [...prev, msg];
+            }
+
+            // UPDATE → actualizar delivered_at / seen_at
+            if (payload.eventType === "UPDATE" && exists) {
+              return prev.map((m) => (m.id === msg.id ? msg : m));
+            }
+
+            return prev;
+          });
+
           setTimeout(scrollToBottom, 50);
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [conversationId]);
 
-  // Enviar mensaje
+  // 🔥 Enviar mensaje
   async function sendMessage() {
-    if (!content.trim()) return;
+    if (!content.trim() || sending) return;
+
+    setSending(true);
 
     const newMessage = {
       conversationId,
       content,
-      sender_id: currentUserId, // ← 🔥 FIX CRÍTICO
+      sender_id: currentUserId,
     };
 
     setContent("");
@@ -87,15 +114,46 @@ export default function ChatWindow({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newMessage),
     });
+
+    setSending(false);
   }
 
-  // Formatear fecha
+  // 🔥 Typing realtime (envía estado a profiles)
+  async function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
+    setContent(e.target.value);
+
+    if (!typing) {
+      setTyping(true);
+
+      await supabase
+        .from("profiles")
+        .update({ is_typing: true })
+        .eq("id", currentUserId);
+
+      setTimeout(async () => {
+        setTyping(false);
+        await supabase
+          .from("profiles")
+          .update({ is_typing: false })
+          .eq("id", currentUserId);
+      }, 1500);
+    }
+  }
+
+  // 🔥 Formatear hora
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleTimeString("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // 🔥 Determinar estado del mensaje
+  const getStatus = (msg: Message): "sent" | "delivered" | "seen" => {
+    if (msg.seen_at) return "seen";
+    if (msg.delivered_at) return "delivered";
+    return "sent";
   };
 
   return (
@@ -118,8 +176,16 @@ export default function ChatWindow({
             content={msg.content}
             isOwn={msg.sender_id === currentUserId}
             time={formatTime(msg.created_at)}
+            status={msg.sender_id === currentUserId ? getStatus(msg) : undefined}
           />
         ))}
+
+        {/* 🔥 Typing indicator */}
+        {typing && (
+          <div className="text-zinc-500 text-sm italic px-2">
+            El otro usuario está escribiendo…
+          </div>
+        )}
 
         <div ref={bottomRef} />
       </div>
@@ -129,14 +195,22 @@ export default function ChatWindow({
         <div className="flex items-center gap-3">
           <input
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleTyping}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
             placeholder="Escribí un mensaje..."
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-50"
+            disabled={sending}
           />
 
           <button
             onClick={sendMessage}
-            className="bg-blue-600 hover:bg-blue-500 transition px-4 py-3 rounded-xl text-white flex items-center gap-2"
+            disabled={sending}
+            className="bg-blue-600 hover:bg-blue-500 transition px-4 py-3 rounded-xl text-white flex items-center gap-2 disabled:opacity-50"
           >
             <Send size={18} />
           </button>

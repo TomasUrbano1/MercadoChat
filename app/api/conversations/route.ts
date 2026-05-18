@@ -10,72 +10,87 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
   }
 
-  const { data, error } = await supabaseAdmin
-    .from("conversations")
-    .select(
-      `
-      id,
-      buyer_id,
-      seller_id,
-      product_id,
-      created_at,
-      updated_at,
-      is_archived,
-      is_blocked,
-      products:products!conversations_product_id_fkey (
-        title,
-        image_url
-      ),
-      messages:messages!conversations_id_fkey (
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("conversations")
+      .select(
+        `
         id,
-        content,
+        buyer_id,
+        seller_id,
+        product_id,
         created_at,
-        sender_id,
-        delivered_at,
-        seen_at
+        updated_at,
+        is_archived,
+        is_blocked,
+
+        products:products!conversations_product_id_fkey (
+          id,
+          title,
+          image_url
+        ),
+
+        messages:messages!messages_conversation_id_fkey (
+          id,
+          content,
+          created_at,
+          sender_id,
+          delivered_at,
+          seen_at
+        )
+      `
       )
-    `
-    )
-    .or(`buyer_id.eq.${user_id},seller_id.eq.${user_id}`)
-    .order("updated_at", { ascending: false });
+      .or(`buyer_id.eq.${user_id},seller_id.eq.${user_id}`)
+      .order("updated_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching conversations:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("SUPABASE ERROR:", error);
+      return NextResponse.json(
+        { error: "Supabase error", details: error },
+        { status: 500 }
+      );
+    }
+
+    const formatted = data
+      .filter((conv) => !conv.is_archived)
+      .map((conv) => {
+        // Producto (Supabase devuelve array)
+        const product = Array.isArray(conv.products)
+          ? conv.products[0]
+          : conv.products;
+
+        // Último mensaje
+        const lastMessage = conv.messages?.length
+          ? [...conv.messages].sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
+            )[0]
+          : null;
+
+        return {
+          id: conv.id,
+          product_title: product?.title ?? "Producto",
+          product_image: product?.image_url ?? null,
+          last_message: lastMessage?.content ?? "",
+          last_message_sender: lastMessage?.sender_id ?? null,
+          last_message_seen_at: lastMessage?.seen_at ?? null,
+          last_message_delivered_at: lastMessage?.delivered_at ?? null,
+          updated_at:
+            lastMessage?.created_at ??
+            conv.updated_at ??
+            conv.created_at,
+        };
+      });
+
+    return NextResponse.json(formatted);
+  } catch (err: any) {
+    console.error("UNEXPECTED ERROR:", err);
+    return NextResponse.json(
+      { error: "Unexpected server error", details: err.message },
+      { status: 500 }
+    );
   }
-
-  const formatted = data
-    .filter((conv) => !conv.is_archived)
-    .map((conv) => {
-      // ✅ Fix: manejar array de productos correctamente
-      const product = Array.isArray(conv.products)
-        ? conv.products[0]
-        : conv.products;
-
-      const lastMessage = conv.messages?.length
-        ? [...conv.messages].sort(
-            (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-          )[0]
-        : null;
-
-      return {
-        id: conv.id,
-        product_title: product?.title ?? "Producto",
-        product_image: product?.image_url ?? null,
-        last_message: lastMessage?.content ?? "",
-        last_message_sender: lastMessage?.sender_id ?? null,
-        last_message_seen_at: lastMessage?.seen_at ?? null,
-        last_message_delivered_at: lastMessage?.delivered_at ?? null,
-        updated_at:
-          lastMessage?.created_at ??
-          conv.updated_at ??
-          conv.created_at,
-      };
-    });
-
-  return NextResponse.json(formatted);
 }
 
 // POST /api/conversations
@@ -166,7 +181,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ success: true });
 }
 
-// PATCH /api/conversations/block
+// PUT /api/conversations/block
 export async function PUT(req: Request) {
   const { conversation_id, blocked } = await req.json();
 

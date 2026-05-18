@@ -77,6 +77,7 @@ export default function ChatWindow({
     const newMessage = {
       conversationId,
       content,
+      sender_id: currentUserId, // ← 🔥 FIX CRÍTICO
     };
 
     setContent("");

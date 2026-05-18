@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabaseAdmin"; // ← usamos el client del backend
+import { supabaseAdmin } from "@/lib/supabaseAdmin"; // client backend con service_role
 
 // GET /api/messages?conversationId=xxx
 export async function GET(req: Request) {
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error(error);
+    console.error("Error fetching messages:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -29,33 +29,41 @@ export async function GET(req: Request) {
 
 // POST /api/messages
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { conversationId, content } = body;
+  try {
+    const body = await req.json();
+    const { conversationId, content, sender_id } = body;
 
-  if (!conversationId || !content) {
+    if (!conversationId || !content || !sender_id) {
+      return NextResponse.json(
+        { error: "Missing fields" },
+        { status: 400 }
+      );
+    }
+
+    const newMessage = {
+      content,
+      sender_id,               // ← 🔥 ahora viene del frontend
+      conversation_id: conversationId,
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from("messages")
+      .insert(newMessage)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error inserting message:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+
+  } catch (err: any) {
+    console.error("Unexpected error:", err.message);
     return NextResponse.json(
-      { error: "Missing fields" },
-      { status: 400 }
+      { error: "Unexpected error" },
+      { status: 500 }
     );
   }
-
-  // ⚠️ Más adelante reemplazamos "demo-user" por el usuario real
-  const newMessage = {
-    content,
-    sender_id: "demo-user",
-    conversation_id: conversationId,
-  };
-
-  const { data, error } = await supabaseAdmin
-    .from("messages")
-    .insert(newMessage)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
 }

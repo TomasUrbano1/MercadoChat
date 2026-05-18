@@ -50,7 +50,7 @@ export default function ChatPage() {
     load();
   }, [user]);
 
-  // Realtime estable
+  // Realtime estable (FIX aplicado)
   useEffect(() => {
     if (!user) return;
 
@@ -62,6 +62,7 @@ export default function ChatPage() {
           event: "*",
           schema: "public",
           table: "messages",
+          filter: "conversation_id=neq.null", // 🔥 FIX: evita SELECT roto interno
         },
         async (payload) => {
           const msg = payload.new as MessagePayload;

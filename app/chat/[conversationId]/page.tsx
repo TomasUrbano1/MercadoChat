@@ -123,12 +123,13 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     load();
   }, [conversationId, user, supabase]);
 
-  // Realtime: presencia + typing
+  // Realtime: presencia + typing (FIX aplicado)
   useEffect(() => {
     if (!info?.otherUser?.id || !supabase) return;
 
+    // 🔥 FIX: cambiar nombre del canal para evitar hidratación automática
     const channel = supabase
-      .channel(`presence-${info.otherUser.id}`)
+      .channel(`presence-user-${info.otherUser.id}`)
       .on(
         "postgres_changes",
         {

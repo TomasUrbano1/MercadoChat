@@ -21,6 +21,7 @@ interface ConversationInfo {
   product: {
     title: string;
     image_url: string | null;
+    id?: string;
   };
   otherUser: {
     id: string;
@@ -41,7 +42,6 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   const [info, setInfo] = useState<ConversationInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Formatear "última vez visto"
   const formatLastSeen = (iso: string | null | undefined) => {
     if (!iso) return "Desconectado";
 
@@ -59,7 +59,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     })}`;
   };
 
-  // 🔥 Cargar info de la conversación + perfil del otro usuario
+  // Cargar info de la conversación
   useEffect(() => {
     if (!user) return;
 
@@ -75,7 +75,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
           seller_id,
           is_archived,
           is_blocked,
-          products:products!conversations_product_id_fkey ( title, image_url ),
+          products:products!conversations_product_id_fkey ( id, title, image_url ),
           buyer:profiles!conversations_buyer_id_fkey ( id, full_name, avatar_url, is_online, last_seen_at, is_typing ),
           seller:profiles!conversations_seller_id_fkey ( id, full_name, avatar_url, is_online, last_seen_at, is_typing )
         `
@@ -102,6 +102,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
           is_archived: data.is_archived,
           is_blocked: data.is_blocked,
           product: {
+            id: productData?.id,
             title: productData?.title ?? "Producto",
             image_url: productData?.image_url ?? null,
           },
@@ -122,7 +123,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     load();
   }, [conversationId, user, supabase]);
 
-  // 🔥 Realtime: presencia + typing del otro usuario
+  // Realtime: presencia + typing
   useEffect(() => {
     if (!info?.otherUser?.id || !supabase) return;
 
@@ -157,11 +158,10 @@ export default function ConversationPage({ params }: ConversationPageProps) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [info?.otherUser?.id, supabase]);
 
-  // 🔥 Archivar conversación
   async function archiveConversation() {
     await fetch("/api/conversations", {
       method: "PATCH",
@@ -177,7 +177,6 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     );
   }
 
-  // 🔥 Bloquear usuario
   async function blockConversation() {
     await fetch("/api/conversations", {
       method: "PUT",
@@ -226,9 +225,8 @@ export default function ConversationPage({ params }: ConversationPageProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* 🔥 HEADER PRO DEL CHAT */}
+      {/* HEADER */}
       <div className="flex items-center gap-4 bg-zinc-900/60 border border-white/10 p-4 rounded-2xl backdrop-blur-xl relative">
-        {/* Avatar */}
         <div className="relative w-14 h-14 rounded-full overflow-hidden border border-white/10">
           {info.otherUser.avatar_url ? (
             <Image
@@ -244,18 +242,14 @@ export default function ConversationPage({ params }: ConversationPageProps) {
           )}
         </div>
 
-        {/* Nombre + estado */}
         <div className="flex-1">
           <p className="text-white font-semibold text-lg">
             {info.otherUser.full_name ?? "Usuario"}
           </p>
-
           <p className="text-zinc-400 text-sm">{statusText}</p>
         </div>
 
-        {/* Botones */}
         <div className="flex items-center gap-3">
-          {/* Archivar */}
           <button
             onClick={archiveConversation}
             className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition"
@@ -267,7 +261,6 @@ export default function ConversationPage({ params }: ConversationPageProps) {
             />
           </button>
 
-          {/* Bloquear */}
           <button
             onClick={blockConversation}
             className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition"
@@ -280,9 +273,8 @@ export default function ConversationPage({ params }: ConversationPageProps) {
           </button>
         </div>
 
-        {/* Producto */}
         <Link
-          href={`/products/${info.product.title}`}
+          href={`/products/${info.product.id}`}
           className="flex items-center gap-3 bg-zinc-800/50 px-3 py-2 rounded-xl border border-white/10 hover:bg-zinc-800 transition ml-4"
         >
           {info.product.image_url ? (
@@ -304,11 +296,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
         </Link>
       </div>
 
-      {/* 🔥 CHAT WINDOW */}
-      <ChatWindow
-        conversationId={conversationId}
-        currentUserId={user.id}
-      />
+      <ChatWindow conversationId={conversationId} currentUserId={user.id} />
     </motion.div>
   );
 }

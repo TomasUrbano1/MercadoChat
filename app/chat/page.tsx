@@ -18,7 +18,6 @@ type Conversation = {
   last_message_delivered_at?: string | null;
 };
 
-// 🔧 Tipo para mensajes realtime
 type MessagePayload = {
   conversation_id: string;
   content: string;
@@ -36,7 +35,7 @@ export default function ChatPage() {
   const conversationsRef = useRef<Conversation[]>([]);
   conversationsRef.current = conversations;
 
-  // 🔥 Cargar conversaciones iniciales
+  // Cargar conversaciones iniciales
   useEffect(() => {
     if (!user) return;
 
@@ -51,7 +50,7 @@ export default function ChatPage() {
     load();
   }, [user]);
 
-  // 🔥 Realtime estable (sin loops)
+  // Realtime estable
   useEffect(() => {
     if (!user) return;
 
@@ -66,11 +65,11 @@ export default function ChatPage() {
         },
         async (payload) => {
           const msg = payload.new as MessagePayload;
-
           const current = conversationsRef.current;
+
           const exists = current.find((c) => c.id === msg.conversation_id);
 
-          // 1️⃣ Si no existe → recargar lista completa
+          // Si no existe → recargar lista completa
           if (!exists) {
             const res = await fetch(`/api/conversations?user_id=${user.id}`);
             const data = await res.json();
@@ -78,7 +77,7 @@ export default function ChatPage() {
             return;
           }
 
-          // 2️⃣ Si existe → actualizar last_message + updated_at + estado
+          // Si existe → actualizar
           const updated = current.map((c) =>
             c.id === msg.conversation_id
               ? {
@@ -92,7 +91,7 @@ export default function ChatPage() {
               : c
           );
 
-          // 3️⃣ Reordenar (solo si el mensaje es del otro usuario)
+          // Reordenar solo si el mensaje es del otro usuario
           if (msg.sender_id !== user.id) {
             updated.sort(
               (a, b) =>
@@ -107,13 +106,12 @@ export default function ChatPage() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, [user]);
 
-  // 🔥 Determinar estado visual del último mensaje
   const getStatusIcon = (conv: Conversation) => {
-    if (conv.last_message_sender !== user?.id) return null; // solo mostrar en mensajes propios
+    if (conv.last_message_sender !== user?.id) return null;
 
     if (conv.last_message_seen_at)
       return <span className="text-blue-400 font-semibold">✓✓</span>;
@@ -141,7 +139,6 @@ export default function ChatPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* HEADER */}
       <header className="text-center space-y-3">
         <h1 className="text-5xl font-extrabold tracking-tight">
           Conversaciones
@@ -151,14 +148,12 @@ export default function ChatPage() {
         </p>
       </header>
 
-      {/* LOADING */}
       {loading && (
         <p className="text-center text-zinc-500 text-lg animate-pulse">
           Cargando conversaciones...
         </p>
       )}
 
-      {/* LISTA */}
       {!loading && conversations.length > 0 && (
         <section className="space-y-4">
           {conversations.map((conv, i) => (
@@ -201,7 +196,6 @@ export default function ChatPage() {
         </section>
       )}
 
-      {/* VACÍO */}
       {!loading && conversations.length === 0 && (
         <motion.p
           className="text-zinc-500 text-center text-lg"

@@ -22,27 +22,38 @@ export async function GET(req: Request) {
       updated_at,
       is_archived,
       is_blocked,
-      products:products!conversations_product_id_fkey ( title, image_url ),
-      messages ( content, created_at, sender_id, delivered_at, seen_at )
+      products:products!conversations_product_id_fkey (
+        title,
+        image_url
+      ),
+      messages:messages!conversations_id_fkey (
+        id,
+        content,
+        created_at,
+        sender_id,
+        delivered_at,
+        seen_at
+      )
     `
     )
     .or(`buyer_id.eq.${user_id},seller_id.eq.${user_id}`)
     .order("updated_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching conversations:", error.message);
+    console.error("Error fetching conversations:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   const formatted = data
-    .filter((conv) => !conv.is_archived) // 🔥 ocultar archivadas
+    .filter((conv) => !conv.is_archived)
     .map((conv) => {
-      const productData = Array.isArray(conv.products)
+      // ✅ Fix: manejar array de productos correctamente
+      const product = Array.isArray(conv.products)
         ? conv.products[0]
         : conv.products;
 
       const lastMessage = conv.messages?.length
-        ? conv.messages.sort(
+        ? [...conv.messages].sort(
             (a, b) =>
               new Date(b.created_at).getTime() -
               new Date(a.created_at).getTime()
@@ -51,8 +62,8 @@ export async function GET(req: Request) {
 
       return {
         id: conv.id,
-        product_title: productData?.title ?? "Producto",
-        product_image: productData?.image_url ?? null,
+        product_title: product?.title ?? "Producto",
+        product_image: product?.image_url ?? null,
         last_message: lastMessage?.content ?? "",
         last_message_sender: lastMessage?.sender_id ?? null,
         last_message_seen_at: lastMessage?.seen_at ?? null,
@@ -77,7 +88,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // 1️⃣ Buscar conversación existente
     const { data: existing } = await supabaseAdmin
       .from("conversations")
       .select("*")
@@ -86,11 +96,13 @@ export async function POST(req: Request) {
       .eq("product_id", product_id)
       .maybeSingle();
 
-    // 2️⃣ Si existe → actualizar updated_at
     if (existing) {
       const { data: updated } = await supabaseAdmin
         .from("conversations")
-        .update({ updated_at: new Date().toISOString(), is_archived: false })
+        .update({
+          updated_at: new Date().toISOString(),
+          is_archived: false,
+        })
         .eq("id", existing.id)
         .select()
         .single();
@@ -102,7 +114,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3️⃣ Crear conversación nueva
     const { data, error } = await supabaseAdmin
       .from("conversations")
       .insert([
@@ -117,7 +128,7 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error("Error creando conversación:", error.message);
+      console.error("Error creating conversation:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -127,7 +138,7 @@ export async function POST(req: Request) {
       existed: false,
     });
   } catch (err: any) {
-    console.error("Error inesperado creando conversación:", err.message);
+    console.error("Unexpected error:", err);
     return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
   }
 }
@@ -137,7 +148,10 @@ export async function PATCH(req: Request) {
   const { conversation_id, archived } = await req.json();
 
   if (!conversation_id) {
-    return NextResponse.json({ error: "Missing conversation_id" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing conversation_id" },
+      { status: 400 }
+    );
   }
 
   const { error } = await supabaseAdmin
@@ -157,7 +171,10 @@ export async function PUT(req: Request) {
   const { conversation_id, blocked } = await req.json();
 
   if (!conversation_id) {
-    return NextResponse.json({ error: "Missing conversation_id" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing conversation_id" },
+      { status: 400 }
+    );
   }
 
   const { error } = await supabaseAdmin

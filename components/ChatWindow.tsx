@@ -37,7 +37,7 @@ export default function ChatWindow({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 🔥 Cargar historial + marcar como visto
+  // Cargar historial
   useEffect(() => {
     async function loadMessages() {
       setLoading(true);
@@ -54,7 +54,7 @@ export default function ChatWindow({
     loadMessages();
   }, [conversationId]);
 
-  // 🔥 Realtime mensajes + estados
+  // Realtime mensajes
   useEffect(() => {
     const channel = supabase
       .channel(`messages-${conversationId}`)
@@ -72,12 +72,10 @@ export default function ChatWindow({
           setMessages((prev) => {
             const exists = prev.find((m) => m.id === msg.id);
 
-            // INSERT → agregar
             if (payload.eventType === "INSERT" && !exists) {
               return [...prev, msg];
             }
 
-            // UPDATE → actualizar delivered_at / seen_at
             if (payload.eventType === "UPDATE" && exists) {
               return prev.map((m) => (m.id === msg.id ? msg : m));
             }
@@ -95,7 +93,7 @@ export default function ChatWindow({
     };
   }, [conversationId]);
 
-  // 🔥 Enviar mensaje
+  // Enviar mensaje
   async function sendMessage() {
     if (!content.trim() || sending) return;
 
@@ -118,7 +116,7 @@ export default function ChatWindow({
     setSending(false);
   }
 
-  // 🔥 Typing realtime (envía estado a profiles)
+  // Typing realtime
   async function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
     setContent(e.target.value);
 
@@ -140,7 +138,6 @@ export default function ChatWindow({
     }
   }
 
-  // 🔥 Formatear hora
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleTimeString("es-AR", {
@@ -149,7 +146,6 @@ export default function ChatWindow({
     });
   };
 
-  // 🔥 Determinar estado del mensaje
   const getStatus = (msg: Message): "sent" | "delivered" | "seen" => {
     if (msg.seen_at) return "seen";
     if (msg.delivered_at) return "delivered";
@@ -180,7 +176,6 @@ export default function ChatWindow({
           />
         ))}
 
-        {/* 🔥 Typing indicator */}
         {typing && (
           <div className="text-zinc-500 text-sm italic px-2">
             El otro usuario está escribiendo…

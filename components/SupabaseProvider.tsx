@@ -59,6 +59,17 @@ export default function SupabaseProvider({
     loadProfile();
   }, [user]);
 
+  // 🔄 Escuchar actualizaciones del perfil (cuando se guarda en ProfilePage)
+  useEffect(() => {
+    function handleProfileUpdate(e: any) {
+      setProfile(e.detail); // actualiza el contexto global
+    }
+
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+    return () =>
+      window.removeEventListener("profileUpdated", handleProfileUpdate);
+  }, []);
+
   return (
     <SupabaseContext.Provider value={{ supabase, user, profile }}>
       {children}

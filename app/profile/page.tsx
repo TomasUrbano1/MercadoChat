@@ -97,6 +97,19 @@ export default function ProfilePage() {
       return;
     }
 
+    // 🔄 Actualizar el perfil global (para que la Navbar se refresque)
+    const { data: updatedProfile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (updatedProfile) {
+      window.dispatchEvent(
+        new CustomEvent("profileUpdated", { detail: updatedProfile })
+      );
+    }
+
     alert("Perfil actualizado");
   }
 
@@ -170,9 +183,7 @@ export default function ProfilePage() {
         <textarea
           placeholder="Bio"
           value={profile.bio}
-          onChange={(e) =>
-            setProfile({ ...profile, bio: e.target.value })
-          }
+          onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
           className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white h-28 focus:border-blue-500 transition"
         />
 
@@ -180,9 +191,7 @@ export default function ProfilePage() {
           <input
             placeholder="Ciudad"
             value={profile.city}
-            onChange={(e) =>
-              setProfile({ ...profile, city: e.target.value })
-            }
+            onChange={(e) => setProfile({ ...profile, city: e.target.value })}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
           />
 

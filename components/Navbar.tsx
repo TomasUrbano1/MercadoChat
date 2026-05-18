@@ -16,7 +16,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const { user, profile } = useSupabase(); // ← AHORA TENÉS PROFILE
+  const { user, profile } = useSupabase();
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -114,16 +114,14 @@ export default function Navbar() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold cursor-pointer overflow-hidden"
+                className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold cursor-pointer overflow-hidden relative"
               >
-                {/* 🔥 AHORA SÍ MUESTRA TU FOTO REAL */}
                 {profile?.avatar_url ? (
                   <Image
                     src={profile.avatar_url}
                     alt="Avatar"
-                    width={36}
-                    height={36}
-                    className="rounded-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 ) : (
                   user.email?.[0]?.toUpperCase()

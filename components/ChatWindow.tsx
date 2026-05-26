@@ -50,7 +50,7 @@ export default function ChatWindow({
 
       setTimeout(scrollToBottom, 80);
 
-      // 🔥 marcar como visto (FIX: enviar userId)
+      // marcar como visto
       await fetch("/api/messages/seen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,14 +64,14 @@ export default function ChatWindow({
     loadMessages();
   }, [conversationId, currentUserId]);
 
-  // Realtime mensajes
+  // Realtime mensajes (FIX: un solo listener con filtro)
   useEffect(() => {
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
@@ -79,38 +79,31 @@ export default function ChatWindow({
         (payload) => {
           const msg = payload.new as Message;
 
-          if (messagesRef.current.some((m) => m.id === msg.id)) return;
+          // INSERT
+          if (payload.eventType === "INSERT") {
+            if (!messagesRef.current.some((m) => m.id === msg.id)) {
+              setMessages((prev) => [...prev, msg]);
+              setTimeout(scrollToBottom, 50);
 
-          setMessages((prev) => [...prev, msg]);
-          setTimeout(scrollToBottom, 50);
-
-          // 🔥 marcar como delivered (FIX: enviar userId)
-          if (msg.sender_id !== currentUserId) {
-            fetch("/api/messages/delivered", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                messageId: msg.id,
-                userId: currentUserId,
-              }),
-            });
+              if (msg.sender_id !== currentUserId) {
+                fetch("/api/messages/delivered", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    messageId: msg.id,
+                    userId: currentUserId,
+                  }),
+                });
+              }
+            }
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          const msg = payload.new as Message;
 
-          setMessages((prev) =>
-            prev.map((m) => (m.id === msg.id ? msg : m))
-          );
+          // UPDATE
+          if (payload.eventType === "UPDATE") {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === msg.id ? msg : m))
+            );
+          }
         }
       )
       .subscribe();

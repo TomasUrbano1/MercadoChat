@@ -37,22 +37,22 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🔥 Cargar cantidad inicial de mensajes no leídos
+  // Cargar cantidad inicial de mensajes no leídos
   useEffect(() => {
-    if (!user) return;
+  if (!user) return;
 
-    async function loadUnread() {
-      const { data } = await supabase
-        .from("messages")
-        .select("id")
-        .eq("seen_at", null)
-        .neq("sender_id", user.id);
+  async function loadUnread() {
+    const { data } = await supabase
+      .from("messages")
+      .select("id")
+      .is("seen_at", null)   // ← FIX
+      .neq("sender_id", user.id);
 
-      setUnreadCount(data?.length ?? 0);
-    }
+    setUnreadCount(data?.length ?? 0);
+  }
 
-    loadUnread();
-  }, [user]);
+  loadUnread();
+}, [user]);
 
  useEffect(() => {
   if (!user) return;

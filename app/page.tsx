@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import ProductCard from "@/components/ProductCard";
-import { supabase } from "@/lib/supabaseClient";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   Search,
   MessageCircle,
@@ -13,7 +12,8 @@ import {
   Flame,
   Filter,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabaseClient";
+import ProductCard from "@/components/ProductCard";
 
 type Product = {
   id: string;
@@ -73,19 +73,17 @@ export default function HomePage() {
   );
 
   return (
-    <div className="space-y-32">
-      {/* HERO ANIMADO */}
-      <section className="relative py-32 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-600/15 via-zinc-900/40 to-zinc-950" />
-
+    <div className="space-y-28">
+      {/* HERO */}
+      <section className="relative py-24 text-center overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-b from-blue-600/15 via-zinc-900/60 to-zinc-950 shadow-xl shadow-black/40">
         <motion.div
-          className="relative z-10 max-w-4xl mx-auto"
+          className="relative z-10 max-w-4xl mx-auto px-4"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
           <motion.h1
-            className="text-6xl md:text-7xl font-extrabold tracking-tight mb-6"
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
@@ -103,7 +101,6 @@ export default function HomePage() {
             la venta en minutos. Sin vueltas, sin formularios eternos.
           </motion.p>
 
-          {/* CTA PRINCIPAL */}
           <motion.div
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
             initial={{ opacity: 0, y: 10 }}
@@ -112,7 +109,7 @@ export default function HomePage() {
           >
             <Link
               href="/products/new"
-              className="inline-block bg-blue-600 hover:bg-blue-500 transition px-8 py-4 rounded-xl text-white font-medium text-lg shadow-lg shadow-blue-600/30"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 transition px-8 py-3.5 rounded-xl text-white font-medium text-base sm:text-lg shadow-lg shadow-blue-600/30"
             >
               Publicar producto
             </Link>
@@ -124,7 +121,6 @@ export default function HomePage() {
             </Link>
           </motion.div>
 
-          {/* BUSCADOR */}
           <motion.div
             className="max-w-xl mx-auto flex items-center bg-zinc-900/80 border border-zinc-800 rounded-xl px-4 py-3 gap-3 shadow-lg shadow-black/30 backdrop-blur"
             initial={{ opacity: 0, y: 10 }}
@@ -140,9 +136,8 @@ export default function HomePage() {
             />
           </motion.div>
 
-          {/* MOCKUP DEL CHAT */}
           <motion.div
-            className="mt-16 mx-auto max-w-3xl rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 bg-zinc-900/70 backdrop-blur-xl"
+            className="mt-14 mx-auto max-w-3xl rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/60 bg-zinc-900/80 backdrop-blur-xl text-left"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
@@ -166,7 +161,7 @@ export default function HomePage() {
               </span>
             </div>
 
-            <div className="p-5 space-y-3 text-left">
+            <div className="p-5 space-y-3">
               <div className="bg-blue-600 text-white px-4 py-2 rounded-xl w-fit text-sm">
                 Hola, ¿sigue disponible el iPhone?
               </div>
@@ -181,15 +176,15 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* FEATURES PREMIUM */}
-      <section className="max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl font-semibold mb-12 text-center">
+      {/* FEATURES */}
+      <section className="space-y-10">
+        <h2 className="text-3xl font-semibold text-center">
           Pensado para cerrar ventas rápido
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-10">
+        <div className="grid md:grid-cols-3 gap-8">
           <motion.div
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center hover:border-zinc-600 transition"
+            className="surface p-8 text-center hover:border-zinc-500/80 transition"
             whileHover={{ y: -4 }}
           >
             <MessageCircle size={40} className="mx-auto text-blue-400 mb-4" />
@@ -200,36 +195,40 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center hover:border-zinc-600 transition"
+            className="surface p-8 text-center hover:border-zinc-500/80 transition"
             whileHover={{ y: -4 }}
           >
             <Zap size={40} className="mx-auto text-yellow-400 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Publicar es cuestión de segundos</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              Publicar es cuestión de segundos
+            </h3>
             <p className="text-zinc-400 text-sm">
-              Foto, título, precio y listo. Sin formularios eternos ni pasos raros.
+              Foto, título, precio y listo. Sin formularios eternos ni pasos
+              raros.
             </p>
           </motion.div>
 
           <motion.div
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center hover:border-zinc-600 transition"
+            className="surface p-8 text-center hover:border-zinc-500/80 transition"
             whileHover={{ y: -4 }}
           >
             <ShieldCheck size={40} className="mx-auto text-green-400 mb-4" />
             <h3 className="text-xl font-semibold mb-2">Todo bajo control</h3>
             <p className="text-zinc-400 text-sm">
-              Tus publicaciones y chats quedan ordenados. Sabés siempre en qué quedó cada conversación.
+              Tus publicaciones y chats quedan ordenados. Sabés siempre en qué
+              quedó cada conversación.
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* TRENDING AHORA */}
-      <section className="max-w-7xl mx-auto px-6 space-y-4">
-        <div className="flex items-center gap-2 mb-2">
+      {/* TRENDING */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 mb-1">
           <Flame className="text-orange-400" />
           <h2 className="text-2xl font-semibold">Trending ahora</h2>
         </div>
-        <p className="text-zinc-400 text-sm mb-4">
+        <p className="text-zinc-400 text-sm mb-3">
           Lo que más se está mirando y preguntando en este momento.
         </p>
 
@@ -238,7 +237,7 @@ export default function HomePage() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="min-w-[260px] h-64 bg-zinc-900 border border-zinc-800 rounded-2xl animate-pulse"
+                className="min-w-[260px] h-64 surface animate-pulse"
               />
             ))}
           </div>
@@ -258,7 +257,7 @@ export default function HomePage() {
       </section>
 
       {/* PRODUCTOS + FILTROS */}
-      <section className="max-w-7xl mx-auto px-6 space-y-6">
+      <section className="space-y-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2 className="text-3xl font-semibold">Explorar productos</h2>
 
@@ -268,14 +267,14 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="flex gap-2 flex-wrap mb-4">
+        <div className="flex gap-2 flex-wrap mb-2">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
               className={`px-3 py-1.5 rounded-full text-xs border transition ${
                 category === cat
-                  ? "bg-blue-600 text-white border-blue-500"
+                  ? "bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/40"
                   : "bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500"
               }`}
             >
@@ -287,10 +286,7 @@ export default function HomePage() {
         {loading ? (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="h-64 bg-zinc-900 border border-zinc-800 rounded-2xl animate-pulse"
-              />
+              <div key={i} className="h-64 surface animate-pulse" />
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
@@ -301,18 +297,19 @@ export default function HomePage() {
           </div>
         ) : (
           <p className="text-zinc-500 text-center">
-            No encontramos productos para esa búsqueda. Probá con otra palabra o categoría.
+            No encontramos productos para esa búsqueda. Probá con otra palabra o
+            categoría.
           </p>
         )}
       </section>
 
       {/* TESTIMONIOS */}
-      <section className="max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl font-semibold mb-12 text-center">
+      <section className="space-y-10">
+        <h2 className="text-3xl font-semibold mb-4 text-center">
           Gente que ya lo usó
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-10">
+        <div className="grid md:grid-cols-3 gap-8">
           {[
             {
               name: "Lucía",
@@ -329,7 +326,7 @@ export default function HomePage() {
           ].map((t) => (
             <motion.div
               key={t.name}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 hover:border-zinc-600 transition"
+              className="surface p-8 hover:border-zinc-500/80 transition"
               whileHover={{ y: -4 }}
             >
               <Star className="text-yellow-400 mb-3" />
@@ -340,17 +337,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA FINAL PREMIUM */}
-      <section className="text-center py-28 border-t border-white/10">
-        <h3 className="text-4xl font-semibold mb-4">
+      {/* CTA FINAL */}
+      <section className="text-center py-20 border-t border-white/10 mt-4">
+        <h3 className="text-3xl md:text-4xl font-semibold mb-4">
           Publicá algo hoy y probá qué pasa.
         </h3>
-        <p className="text-zinc-400 mb-8 text-lg">
-          No necesitás armar una tienda. Solo subís un producto y empezás a chatear.
+        <p className="text-zinc-400 mb-8 text-lg max-w-2xl mx-auto">
+          No necesitás armar una tienda. Solo subís un producto y empezás a
+          chatear.
         </p>
         <Link
           href="/products/new"
-          className="bg-blue-600 hover:bg-blue-500 transition px-10 py-4 rounded-xl text-white font-medium text-xl shadow-lg shadow-blue-600/25"
+          className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 transition px-10 py-4 rounded-xl text-white font-medium text-lg shadow-lg shadow-blue-600/25"
         >
           Crear publicación
         </Link>

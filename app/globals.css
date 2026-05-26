@@ -2,6 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-zinc-950 text-white; }
-input, textarea, select { @apply bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 w-full; }
-button { @apply rounded-lg px-4 py-2; }
+/* ----------------------------- */
+/* 1) TIPOGRAFÍA GLOBAL          */
+/* ----------------------------- */
+
+html {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* ----------------------------- */
+/* 2) PALETA GLOBAL              */
+/* ----------------------------- */
+
+:root {
+  --bg: #0d0d0f;
+  --bg-soft: #131316;
+  --surface: #1a1a1d;
+  --surface-hover: #222226;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e5e7eb;
+  --text-muted: #9ca3af;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --radius: 0.75rem;
+}
+
+/* ----------------------------- */
+/* 3) BODY                       */
+/* ----------------------------- */
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ----------------------------- */
+/* 4) SCROLLBAR MODERNA          */
+/* ----------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ----------------------------- */
+/* 5) INPUTS                     */
+/* ----------------------------- */
+
+input,
+textarea,
+select {
+  @apply w-full px-4 py-2 rounded-lg border outline-none transition;
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* ----------------------------- */
+/* 6) BOTONES                    */
+/* ----------------------------- */
+
+button {
+  @apply px-4 py-2 rounded-lg font-medium transition;
+  background: var(--accent);
+  color: white;
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----------------------------- */
+/* 7) LINKS                      */
+/* ----------------------------- */
+
+a {
+  color: var(--accent);
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+/* ----------------------------- */
+/* 8) TARJETAS / SURFACES        */
+/* ----------------------------- */
+
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ----------------------------- */
+/* 9) ANIMACIONES SUAVES         */
+/* ----------------------------- */
+
+.fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -50,19 +50,19 @@ export default function ChatPage() {
     load();
   }, [user]);
 
-  // Realtime estable (FIX aplicado)
+  // Realtime estable
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel("conversations-realtime")
+      .channel(`conversations-${user.id}`)
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT", // 🔥 SOLO INSERT
           schema: "public",
           table: "messages",
-          filter: "conversation_id=neq.null", // 🔥 FIX: evita SELECT roto interno
+          filter: `receiver_id=eq.${user.id}`, // 🔥 SOLO mensajes relevantes
         },
         async (payload) => {
           const msg = payload.new as MessagePayload;
@@ -70,11 +70,13 @@ export default function ChatPage() {
 
           const exists = current.find((c) => c.id === msg.conversation_id);
 
-          // Si no existe → recargar lista completa
+          // Si no existe → agregar sin recargar todo
           if (!exists) {
-            const res = await fetch(`/api/conversations?user_id=${user.id}`);
-            const data = await res.json();
-            setConversations(data);
+            const res = await fetch(
+              `/api/conversations/single?id=${msg.conversation_id}`
+            );
+            const newConv = await res.json();
+            setConversations([newConv, ...current]);
             return;
           }
 
@@ -92,14 +94,12 @@ export default function ChatPage() {
               : c
           );
 
-          // Reordenar solo si el mensaje es del otro usuario
-          if (msg.sender_id !== user.id) {
-            updated.sort(
-              (a, b) =>
-                new Date(b.updated_at).getTime() -
-                new Date(a.updated_at).getTime()
-            );
-          }
+          // Reordenar SIEMPRE
+          updated.sort(
+            (a, b) =>
+              new Date(b.updated_at).getTime() -
+              new Date(a.updated_at).getTime()
+          );
 
           setConversations(updated);
         }
@@ -107,7 +107,7 @@ export default function ChatPage() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [user]);
 

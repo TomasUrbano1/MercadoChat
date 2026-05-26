@@ -27,7 +27,7 @@ export default function ChatWindow({
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [typing, setTyping] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef<Message[]>([]);
@@ -49,6 +49,13 @@ export default function ChatWindow({
       setLoading(false);
 
       setTimeout(scrollToBottom, 80);
+
+      // 🔥 marcar como visto
+      await fetch("/api/messages/seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId }),
+      });
     }
 
     loadMessages();
@@ -61,7 +68,7 @@ export default function ChatWindow({
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
           schema: "public",
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
@@ -69,73 +76,107 @@ export default function ChatWindow({
         (payload) => {
           const msg = payload.new as Message;
 
-          setMessages((prev) => {
-            const exists = prev.find((m) => m.id === msg.id);
+          // evitar duplicados
+          if (messagesRef.current.some((m) => m.id === msg.id)) return;
 
-            if (payload.eventType === "INSERT" && !exists) {
-              return [...prev, msg];
-            }
-
-            if (payload.eventType === "UPDATE" && exists) {
-              return prev.map((m) => (m.id === msg.id ? msg : m));
-            }
-
-            return prev;
-          });
+          setMessages((prev) => [...prev, msg]);
 
           setTimeout(scrollToBottom, 50);
+
+          // marcar como delivered
+          if (msg.sender_id !== currentUserId) {
+            fetch("/api/messages/delivered", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ messageId: msg.id }),
+            });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const msg = payload.new as Message;
+
+          setMessages((prev) =>
+            prev.map((m) => (m.id === msg.id ? msg : m))
+          );
         }
       )
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, currentUserId]);
+
+  // Typing realtime (sin tocar la tabla profiles)
+  useEffect(() => {
+    const channel = supabase.channel(`typing-${conversationId}`);
+
+    channel
+      .on("broadcast", { event: "typing" }, (payload) => {
+        if (payload.sender !== currentUserId) {
+          setOtherTyping(true);
+          setTimeout(() => setOtherTyping(false), 1500);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, currentUserId]);
 
   // Enviar mensaje
   async function sendMessage() {
     if (!content.trim() || sending) return;
 
-    setSending(true);
+    const tempId = `temp-${Date.now()}`;
 
-    const newMessage = {
-      conversationId,
+    // 🔥 Optimistic UI
+    const optimistic: Message = {
+      id: tempId,
       content,
       sender_id: currentUserId,
+      created_at: new Date().toISOString(),
     };
 
+    setMessages((prev) => [...prev, optimistic]);
+    scrollToBottom();
+
+    const toSend = content;
     setContent("");
+    setSending(true);
 
     await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newMessage),
+      body: JSON.stringify({
+        conversationId,
+        content: toSend,
+        sender_id: currentUserId,
+      }),
     });
 
     setSending(false);
   }
 
-  // Typing realtime
-  async function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
+  // Emit typing event
+  function handleTyping(e: React.ChangeEvent<HTMLInputElement>) {
     setContent(e.target.value);
 
-    if (!typing) {
-      setTyping(true);
-
-      await supabase
-        .from("profiles")
-        .update({ is_typing: true })
-        .eq("id", currentUserId);
-
-      setTimeout(async () => {
-        setTyping(false);
-        await supabase
-          .from("profiles")
-          .update({ is_typing: false })
-          .eq("id", currentUserId);
-      }, 1500);
-    }
+    supabase.channel(`typing-${conversationId}`).send({
+      type: "broadcast",
+      event: "typing",
+      payload: { sender: currentUserId },
+    });
   }
 
   const formatTime = (iso: string) => {
@@ -176,7 +217,7 @@ export default function ChatWindow({
           />
         ))}
 
-        {typing && (
+        {otherTyping && (
           <div className="text-zinc-500 text-sm italic px-2">
             El otro usuario está escribiendo…
           </div>

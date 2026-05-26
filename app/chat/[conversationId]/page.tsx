@@ -19,20 +19,20 @@ interface ConversationInfo {
   buyer_id: string;
   seller_id: string;
   product: {
+    id: string;
     title: string;
     image_url: string | null;
-    id?: string;
   };
   otherUser: {
     id: string;
     full_name: string | null;
     avatar_url: string | null;
-    is_online?: boolean;
-    last_seen_at?: string | null;
-    is_typing?: boolean;
+    is_online: boolean;
+    last_seen_at: string | null;
+    is_typing: boolean;
   };
-  is_archived?: boolean;
-  is_blocked?: boolean;
+  is_archived: boolean;
+  is_blocked: boolean;
 }
 
 export default function ConversationPage({ params }: ConversationPageProps) {
@@ -42,7 +42,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   const [info, setInfo] = useState<ConversationInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const formatLastSeen = (iso: string | null | undefined) => {
+  const formatLastSeen = (iso: string | null) => {
     if (!iso) return "Desconectado";
 
     const date = new Date(iso);
@@ -59,60 +59,37 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     })}`;
   };
 
-  // Cargar info de la conversación
+  // Cargar info desde API (más estable)
   useEffect(() => {
     if (!user) return;
 
     async function load() {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("conversations")
-        .select(
-          `
-          id,
-          buyer_id,
-          seller_id,
-          is_archived,
-          is_blocked,
-          products:products!conversations_product_id_fkey ( id, title, image_url ),
-          buyer:profiles!conversations_buyer_id_fkey ( id, full_name, avatar_url, is_online, last_seen_at, is_typing ),
-          seller:profiles!conversations_seller_id_fkey ( id, full_name, avatar_url, is_online, last_seen_at, is_typing )
-        `
-        )
-        .eq("id", conversationId)
-        .single();
+      const res = await fetch(`/api/conversations/single?id=${conversationId}`);
+      const data = await res.json();
 
-      if (!error && data) {
+      if (data?.id) {
         const isBuyer = data.buyer_id === user.id;
-
-        const productData = Array.isArray(data.products)
-          ? data.products[0]
-          : data.products;
-
-        const otherUserData = isBuyer ? data.seller : data.buyer;
-        const otherUser = Array.isArray(otherUserData)
-          ? otherUserData[0]
-          : otherUserData;
 
         setInfo({
           id: data.id,
           buyer_id: data.buyer_id,
           seller_id: data.seller_id,
-          is_archived: data.is_archived,
-          is_blocked: data.is_blocked,
+          is_archived: data.is_archived ?? false,
+          is_blocked: data.is_blocked ?? false,
           product: {
-            id: productData?.id,
-            title: productData?.title ?? "Producto",
-            image_url: productData?.image_url ?? null,
+            id: data.product_id,
+            title: data.product_title,
+            image_url: data.product_image,
           },
           otherUser: {
-            id: otherUser?.id ?? "",
-            full_name: otherUser?.full_name ?? null,
-            avatar_url: otherUser?.avatar_url ?? null,
-            is_online: otherUser?.is_online ?? false,
-            last_seen_at: otherUser?.last_seen_at ?? null,
-            is_typing: otherUser?.is_typing ?? false,
+            id: isBuyer ? data.seller_id : data.buyer_id,
+            full_name: data.otherUser?.full_name ?? null,
+            avatar_url: data.otherUser?.avatar_url ?? null,
+            is_online: data.otherUser?.is_online ?? false,
+            last_seen_at: data.otherUser?.last_seen_at ?? null,
+            is_typing: data.otherUser?.is_typing ?? false,
           },
         });
       }
@@ -121,14 +98,14 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     }
 
     load();
-  }, [conversationId, user, supabase]);
+  }, [conversationId, user]);
 
-  // Realtime: presencia + typing (FIX aplicado)
+  // Realtime: presencia + typing
   useEffect(() => {
     if (!info?.otherUser?.id || !supabase) return;
 
-    // 🔥 FIX: cambiar nombre del canal para evitar hidratación automática
-    const channel = supabase.channel(`presence-user-${info.otherUser.id}`)
+    const channel = supabase
+      .channel(`presence-${info.otherUser.id}`)
       .on(
         "postgres_changes",
         {
@@ -158,7 +135,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [info?.otherUser?.id, supabase]);
 
@@ -194,11 +171,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
 
   if (!user) {
     return (
-      <motion.p
-        className="text-center text-zinc-400 mt-20 text-lg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
+      <motion.p className="text-center text-zinc-400 mt-20 text-lg">
         Tenés que iniciar sesión para ver esta conversación.
       </motion.p>
     );
@@ -219,12 +192,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     : formatLastSeen(info.otherUser.last_seen_at);
 
   return (
-    <motion.div
-      className="max-w-4xl mx-auto space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
+    <motion.div className="max-w-4xl mx-auto space-y-6">
       {/* HEADER */}
       <div className="flex items-center gap-4 bg-zinc-900/60 border border-white/10 p-4 rounded-2xl backdrop-blur-xl relative">
         <div className="relative w-14 h-14 rounded-full overflow-hidden border border-white/10">
@@ -253,7 +221,6 @@ export default function ConversationPage({ params }: ConversationPageProps) {
           <button
             onClick={archiveConversation}
             className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition"
-            title="Archivar conversación"
           >
             <Archive
               size={20}
@@ -264,7 +231,6 @@ export default function ConversationPage({ params }: ConversationPageProps) {
           <button
             onClick={blockConversation}
             className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition"
-            title="Bloquear usuario"
           >
             <Ban
               size={20}

@@ -14,7 +14,6 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1️⃣ Obtener mensajes ordenados
     const { data, error } = await supabaseAdmin
       .from("messages")
       .select("*")
@@ -24,17 +23,6 @@ export async function GET(req: Request) {
     if (error) {
       console.error("Error fetching messages:", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    // 2️⃣ Marcar como vistos (solo los que no lo están)
-    const { error: seenError } = await supabaseAdmin
-      .from("messages")
-      .update({ seen_at: new Date().toISOString() })
-      .eq("conversation_id", conversationId)
-      .is("seen_at", null);
-
-    if (seenError) {
-      console.error("Error updating seen_at:", seenError.message);
     }
 
     return NextResponse.json(data);
@@ -60,12 +48,35 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1️⃣ Crear mensaje nuevo
+    // 1️⃣ Validar que el usuario pertenece a la conversación
+    const { data: conv, error: convError } = await supabaseAdmin
+      .from("conversations")
+      .select("buyer_id, seller_id")
+      .eq("id", conversationId)
+      .single();
+
+    if (convError || !conv) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 }
+      );
+    }
+
+    const isParticipant =
+      conv.buyer_id === sender_id || conv.seller_id === sender_id;
+
+    if (!isParticipant) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
+
+    // 2️⃣ Crear mensaje nuevo
     const newMessage = {
       content,
       sender_id,
       conversation_id: conversationId,
-      delivered_at: new Date().toISOString(), // se marca como entregado al insertar
     };
 
     const { data, error } = await supabaseAdmin
@@ -79,15 +90,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 2️⃣ Actualizar updated_at de la conversación
-    const { error: convError } = await supabaseAdmin
+    // 3️⃣ Actualizar updated_at de la conversación
+    await supabaseAdmin
       .from("conversations")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", conversationId);
-
-    if (convError) {
-      console.error("Error updating conversation timestamp:", convError.message);
-    }
 
     return NextResponse.json(data);
   } catch (err: any) {

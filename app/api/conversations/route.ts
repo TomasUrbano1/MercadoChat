@@ -30,7 +30,7 @@ export async function GET(req: Request) {
           image_url
         ),
 
-        messages:messages!messages_conversation_id_fkey (
+        last_message:messages!messages_conversation_id_fkey (
           id,
           content,
           created_at,
@@ -45,23 +45,18 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error("SUPABASE ERROR:", error);
-      return NextResponse.json(
-        { error: "Supabase error", details: error },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     const formatted = data
-      .filter((conv) => !conv.is_archived)
+      .filter((c) => !c.is_archived)
       .map((conv) => {
-        // Producto (Supabase devuelve array)
         const product = Array.isArray(conv.products)
           ? conv.products[0]
           : conv.products;
 
-        // Último mensaje
-        const lastMessage = conv.messages?.length
-          ? [...conv.messages].sort(
+        const last = Array.isArray(conv.last_message)
+          ? conv.last_message.sort(
               (a, b) =>
                 new Date(b.created_at).getTime() -
                 new Date(a.created_at).getTime()
@@ -72,14 +67,11 @@ export async function GET(req: Request) {
           id: conv.id,
           product_title: product?.title ?? "Producto",
           product_image: product?.image_url ?? null,
-          last_message: lastMessage?.content ?? "",
-          last_message_sender: lastMessage?.sender_id ?? null,
-          last_message_seen_at: lastMessage?.seen_at ?? null,
-          last_message_delivered_at: lastMessage?.delivered_at ?? null,
-          updated_at:
-            lastMessage?.created_at ??
-            conv.updated_at ??
-            conv.created_at,
+          last_message: last?.content ?? "",
+          last_message_sender: last?.sender_id ?? null,
+          last_message_seen_at: last?.seen_at ?? null,
+          last_message_delivered_at: last?.delivered_at ?? null,
+          updated_at: last?.created_at ?? conv.updated_at ?? conv.created_at,
         };
       });
 
@@ -91,115 +83,4 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
-
-// POST /api/conversations
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { buyer_id, seller_id, product_id } = body;
-
-    if (!buyer_id || !seller_id || !product_id) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    const { data: existing } = await supabaseAdmin
-      .from("conversations")
-      .select("*")
-      .eq("buyer_id", buyer_id)
-      .eq("seller_id", seller_id)
-      .eq("product_id", product_id)
-      .maybeSingle();
-
-    if (existing) {
-      const { data: updated } = await supabaseAdmin
-        .from("conversations")
-        .update({
-          updated_at: new Date().toISOString(),
-          is_archived: false,
-        })
-        .eq("id", existing.id)
-        .select()
-        .single();
-
-      return NextResponse.json({
-        success: true,
-        conversation: updated,
-        existed: true,
-      });
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from("conversations")
-      .insert([
-        {
-          buyer_id,
-          seller_id,
-          product_id,
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating conversation:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      conversation: data,
-      existed: false,
-    });
-  } catch (err: any) {
-    console.error("Unexpected error:", err);
-    return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
-  }
-}
-
-// PATCH /api/conversations/archive
-export async function PATCH(req: Request) {
-  const { conversation_id, archived } = await req.json();
-
-  if (!conversation_id) {
-    return NextResponse.json(
-      { error: "Missing conversation_id" },
-      { status: 400 }
-    );
-  }
-
-  const { error } = await supabaseAdmin
-    .from("conversations")
-    .update({ is_archived: archived })
-    .eq("id", conversation_id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
-}
-
-// PUT /api/conversations/block
-export async function PUT(req: Request) {
-  const { conversation_id, blocked } = await req.json();
-
-  if (!conversation_id) {
-    return NextResponse.json(
-      { error: "Missing conversation_id" },
-      { status: 400 }
-    );
-  }
-
-  const { error } = await supabaseAdmin
-    .from("conversations")
-    .update({ is_blocked: blocked })
-    .eq("id", conversation_id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
 }

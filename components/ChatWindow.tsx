@@ -50,16 +50,19 @@ export default function ChatWindow({
 
       setTimeout(scrollToBottom, 80);
 
-      // 🔥 marcar como visto
+      // 🔥 marcar como visto (FIX: enviar userId)
       await fetch("/api/messages/seen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId }),
+        body: JSON.stringify({
+          conversationId,
+          userId: currentUserId,
+        }),
       });
     }
 
     loadMessages();
-  }, [conversationId]);
+  }, [conversationId, currentUserId]);
 
   // Realtime mensajes
   useEffect(() => {
@@ -76,19 +79,20 @@ export default function ChatWindow({
         (payload) => {
           const msg = payload.new as Message;
 
-          // evitar duplicados
           if (messagesRef.current.some((m) => m.id === msg.id)) return;
 
           setMessages((prev) => [...prev, msg]);
-
           setTimeout(scrollToBottom, 50);
 
-          // marcar como delivered
+          // 🔥 marcar como delivered (FIX: enviar userId)
           if (msg.sender_id !== currentUserId) {
             fetch("/api/messages/delivered", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ messageId: msg.id }),
+              body: JSON.stringify({
+                messageId: msg.id,
+                userId: currentUserId,
+              }),
             });
           }
         }
@@ -116,7 +120,7 @@ export default function ChatWindow({
     };
   }, [conversationId, currentUserId]);
 
-  // Typing realtime (sin tocar la tabla profiles)
+  // Typing realtime
   useEffect(() => {
     const channel = supabase.channel(`typing-${conversationId}`);
 
@@ -140,7 +144,6 @@ export default function ChatWindow({
 
     const tempId = `temp-${Date.now()}`;
 
-    // 🔥 Optimistic UI
     const optimistic: Message = {
       id: tempId,
       content,
@@ -195,7 +198,6 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-col h-[80vh] border border-white/10 rounded-2xl overflow-hidden bg-zinc-900/40 backdrop-blur-xl">
-      {/* MENSAJES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading && (
           <p className="text-zinc-500 text-center">Cargando mensajes...</p>
@@ -226,7 +228,6 @@ export default function ChatWindow({
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT */}
       <div className="border-t border-white/10 p-4 bg-zinc-950/60 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <input

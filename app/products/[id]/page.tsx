@@ -269,6 +269,263 @@ export default function ProductDetailPage({ params }: any) {
           whileHover={{ scale: 1.01 }}
           transition={{ duration: 0.3 }}
         >
+         "use client";
+
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ImageOff, MessageCircle, Trash2, Pencil, Heart } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { useSupabase } from "@/components/SupabaseProvider";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+
+interface Product {
+  category_id: any;
+  id: string;
+  title: string;
+  price: number;
+  description?: string;
+  image_url: string | null;
+
+  category_name?: string | null;
+  subcategory_name?: string | null;
+
+  seller_id: string;
+  seller?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+
+  status?: "available" | "reserved" | "sold";
+}
+
+export default function ProductDetailPage({ params }: any) {
+  const { id } = params;
+  const router = useRouter();
+  const { user } = useSupabase();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [moreFromSeller, setMoreFromSeller] = useState<any[]>([]);
+  const [related, setRelated] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Cargar producto
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from("products")
+        .select(`
+          id,
+          title,
+          price,
+          description,
+          image_url,
+          status,
+          categories:category_id (name),
+          subcategories:subcategory_id (name),
+          seller:profiles!products_seller_id_fkey (
+            full_name,
+            avatar_url
+          ),
+          seller_id,
+          category_id
+        `)
+        .eq("id", id)
+        .single();
+
+      if (data) {
+        const mapped: Product = {
+          ...data,
+          category_name: data.categories?.name || null,
+          subcategory_name: data.subcategories?.name || null,
+          seller: data.seller || null,
+        };
+
+        setProduct(mapped);
+      }
+
+      setLoading(false);
+    }
+
+    load();
+  }, [id]);
+
+  // Cargar favoritos del usuario
+  useEffect(() => {
+    if (!user || !product) return;
+
+    async function loadFavorite() {
+      const { data } = await supabase
+        .from("favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("product_id", product.id)
+        .maybeSingle();
+
+      setIsFavorite(!!data);
+    }
+
+    loadFavorite();
+  }, [user, product]);
+
+  // Toggle favorito
+  async function toggleFavorite() {
+    if (!user) return router.push("/auth/login");
+    if (!product) return;
+
+    if (isFavorite) {
+      await supabase
+        .from("favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("product_id", product.id);
+
+      setIsFavorite(false);
+    } else {
+      await supabase.from("favorites").insert({
+        user_id: user.id,
+        product_id: product.id,
+      });
+
+      setIsFavorite(true);
+    }
+  }
+
+  // Cargar más productos del vendedor
+  useEffect(() => {
+    if (!product) return;
+
+    async function loadMore() {
+      const { data } = await supabase
+        .from("products")
+        .select("id, title, price, image_url, status")
+        .eq("seller_id", product.seller_id)
+        .neq("id", product.id)
+        .order("inserted_at", { ascending: false })
+        .limit(6);
+
+      if (data) setMoreFromSeller(data);
+    }
+
+    loadMore();
+  }, [product]);
+
+  // Cargar productos relacionados
+  useEffect(() => {
+    if (!product || !product.category_id) return;
+
+    async function loadRelated() {
+      const { data } = await supabase
+        .from("products")
+        .select("id, title, price, image_url, status")
+        .eq("category_id", product.category_id)
+        .neq("id", product.id)
+        .limit(6);
+
+      if (data) setRelated(data);
+    }
+
+    loadRelated();
+  }, [product]);
+
+  async function handleChat() {
+    if (!user) return router.push("/auth/login");
+    if (!product) return;
+
+    if (product.status === "sold") {
+      return alert("Este producto ya fue vendido");
+    }
+
+    if (user.id === product.seller_id) {
+      return alert("No podés chatear con vos mismo");
+    }
+
+    const res = await fetch("/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        buyer_id: user.id,
+        seller_id: product.seller_id,
+        product_id: product.id,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Error creando conversación:", data.error);
+      return alert("Error creando conversación");
+    }
+
+    router.push(`/chat/${data.conversation.id}`);
+  }
+
+  async function handleDelete() {
+    if (!product) return;
+
+    const confirmDelete = confirm("¿Seguro que querés eliminar este producto?");
+    if (!confirmDelete) return;
+
+    setDeleting(true);
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", product.id);
+
+    setDeleting(false);
+
+    if (error) {
+      alert("Error eliminando producto");
+      return;
+    }
+
+    router.push("/profile/my-products");
+  }
+
+  if (loading || !product) {
+    return (
+      <p className="text-center text-zinc-400 mt-20 animate-pulse">
+        Cargando producto...
+      </p>
+    );
+  }
+
+  const categoryLabel = product.subcategory_name
+    ? `${product.category_name} • ${product.subcategory_name}`
+    : product.category_name || "Sin categoría";
+
+  const statusColors: Record<string, string> = {
+    available: "bg-green-600/80 text-white border-green-400/30",
+    reserved: "bg-yellow-600/80 text-white border-yellow-400/30",
+    sold: "bg-red-600/80 text-white border-red-400/30",
+  };
+
+  const statusLabel: Record<string, string> = {
+    available: "Disponible",
+    reserved: "Reservado",
+    sold: "Vendido",
+  };
+
+  return (
+    <div className="space-y-20">
+      {/* PRODUCTO */}
+      <motion.div
+        className="grid lg:grid-cols-2 gap-14"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {/* IMAGE */}
+        <motion.div
+          className="relative h-[450px] w-full rounded-2xl overflow-hidden border border-white/10 shadow-xl shadow-black/30"
+          whileHover={{ scale: 1.01 }}
+          transition={{ duration: 0.3 }}
+        >
           {/* ❤️ FAVORITE BUTTON */}
           {user && (
             <button
@@ -457,7 +714,7 @@ export default function ProductDetailPage({ params }: any) {
                   </p>
                 </div>
               </Link>
-            ))}
+                        ))}
           </div>
         </div>
       )}

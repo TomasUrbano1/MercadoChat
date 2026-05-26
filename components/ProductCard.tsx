@@ -45,7 +45,11 @@ export default function ProductCard({ product }: Props) {
   };
 
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="group"
+    >
       <div className="relative">
         {/* ❤️ FAVORITE BUTTON */}
         {product.toggleFavorite && (
@@ -54,7 +58,7 @@ export default function ProductCard({ product }: Props) {
               e.preventDefault();
               product.toggleFavorite?.();
             }}
-            className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 backdrop-blur border border-white/10 hover:bg-black/80 transition"
+            className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 backdrop-blur border border-white/10 hover:bg-black/80 transition shadow-md"
           >
             <Heart
               size={20}
@@ -67,7 +71,7 @@ export default function ProductCard({ product }: Props) {
 
         <Link
           href={`/products/${product.id}`}
-          className="group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-black/30 block"
+          className="block bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-600 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-black/40"
         >
           {/* IMAGE */}
           <div className="relative h-56 w-full overflow-hidden">
@@ -88,14 +92,14 @@ export default function ProductCard({ product }: Props) {
             )}
 
             {/* CATEGORY BADGE */}
-            <span className="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10">
+            <span className="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10 shadow">
               {categoryLabel}
             </span>
 
             {/* STATUS BADGE */}
             {product.status && (
               <span
-                className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-medium border ${statusColors[product.status]}`}
+                className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-medium border shadow ${statusColors[product.status]}`}
               >
                 {statusLabel[product.status]}
               </span>
@@ -112,7 +116,9 @@ export default function ProductCard({ product }: Props) {
               ${product.price.toLocaleString("es-AR")}
             </p>
 
-            <p className="text-zinc-500 text-xs">Ver detalles →</p>
+            <p className="text-zinc-500 text-xs group-hover:text-zinc-300 transition">
+              Ver detalles →
+            </p>
           </div>
         </Link>
       </div>

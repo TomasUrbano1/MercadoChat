@@ -73,18 +73,18 @@ export default function HomePage() {
   );
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black">
-      <div className="max-w-6xl mx-auto px-4 py-10 space-y-24">
-        {/* HERO */}
-        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-blue-600/25 via-zinc-950 to-zinc-950 shadow-[0_40px_120px_rgba(0,0,0,0.8)]">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-black to-zinc-950 text-white">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-10 space-y-24">
+        {/* HERO PREMIUM */}
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-blue-600/20 via-zinc-950 to-black shadow-[0_40px_120px_rgba(0,0,0,0.9)]">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-40 -right-10 w-80 h-80 bg-blue-500/25 blur-3xl rounded-full" />
-            <div className="absolute -bottom-40 -left-10 w-96 h-96 bg-emerald-500/15 blur-3xl rounded-full" />
+            <div className="absolute -bottom-40 -left-10 w-96 h-96 bg-emerald-500/18 blur-3xl rounded-full" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06),_transparent_55%)]" />
           </div>
 
-          <div className="relative grid gap-12 lg:grid-cols-[1.25fr,1fr] items-center px-6 py-12 md:px-10 md:py-16">
-            {/* Left */}
+          <div className="relative grid gap-12 lg:grid-cols-[1.4fr,1fr] items-center px-6 py-12 md:px-10 md:py-16">
+            {/* Left: copy + CTA */}
             <motion.div
               initial={{ opacity: 0, x: -25 }}
               animate={{ opacity: 1, x: 0 }}
@@ -93,17 +93,17 @@ export default function HomePage() {
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[11px] text-zinc-300">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                MercadoChat está en beta, pero ya se está usando para vender.
+                Beta activa · Ya se están cerrando ventas por chat.
               </div>
 
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-                  El marketplace que se siente como chat.
+                <h1 className="text-4xl md:text-5xl lg:text-[3.2rem] font-extrabold tracking-tight leading-tight">
+                  Vendé como si estuvieras chateando.
                 </h1>
                 <p className="text-zinc-200 text-base md:text-lg max-w-xl">
-                  Publicá lo que quieras, hablá directo con la otra persona y
-                  cerrá la venta en minutos. Sin vueltas, sin formularios
-                  eternos.
+                  MercadoChat junta lo mejor de un marketplace con lo mejor de
+                  una conversación directa. Publicás, hablás y cerrás la venta
+                  en minutos.
                 </p>
               </div>
 
@@ -112,13 +112,13 @@ export default function HomePage() {
                   href="/products/new"
                   className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-500 transition px-7 py-3 rounded-xl text-white font-medium text-base shadow-lg shadow-blue-600/40 w-full sm:w-auto"
                 >
-                  Publicar producto
+                  Publicar mi primer producto
                 </Link>
                 <Link
                   href="/products"
                   className="text-zinc-200 hover:text-white transition text-sm"
                 >
-                  Ver productos en vivo →
+                  Ver qué está publicando la gente →
                 </Link>
               </div>
 
@@ -130,21 +130,21 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
-                  <p className="text-zinc-400">Publicar tarda</p>
+                  <p className="text-zinc-400">Tiempo para publicar</p>
                   <p className="text-white font-semibold mt-1">
                     menos de 1 minuto
                   </p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
-                  <p className="text-zinc-400">Pensado para</p>
+                  <p className="text-zinc-400">Ideal para</p>
                   <p className="text-white font-semibold mt-1">
-                    ventas rápidas
+                    ventas rápidas y directas
                   </p>
                 </div>
               </div>
             </motion.div>
 
-            {/* Right: chat preview + search */}
+            {/* Right: chat preview + quick search */}
             <motion.div
               initial={{ opacity: 0, x: 25 }}
               animate={{ opacity: 1, x: 0 }}
@@ -204,15 +204,15 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* SEARCH + CATEGORIES (compact under hero) */}
+        {/* NAV + CATEGORIES (premium + marketplace) */}
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-[0.18em]">
-                Navegación
+              <h2 className="text-xs font-semibold text-zinc-300 uppercase tracking-[0.18em]">
+                Explorar
               </h2>
               <p className="text-zinc-400 text-xs mt-1">
-                Filtrá por categoría o explorá lo que ya está publicado.
+                Filtrá por categoría o mirá todo lo que se está moviendo.
               </p>
             </div>
 
@@ -234,15 +234,15 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FEATURES */}
+        {/* FEATURES PREMIUM */}
         <section className="space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-2xl md:text-3xl font-semibold">
               Pensado para cerrar ventas rápido
             </h2>
             <p className="text-zinc-400 text-sm max-w-xl mx-auto">
-              Todo el flujo gira alrededor del chat. Publicar, hablar, cerrar.
-              Sin fricción.
+              Todo el flujo está diseñado para que publicar, hablar y cerrar
+              sea lo más natural posible.
             </p>
           </div>
 
@@ -255,7 +255,7 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold mb-2">Chat primero</h3>
               <p className="text-zinc-400 text-sm">
                 Nada de mensajes perdidos. Todo pasa por el chat, en tiempo
-                real.
+                real, con contexto del producto.
               </p>
             </motion.div>
 
@@ -265,11 +265,11 @@ export default function HomePage() {
             >
               <Zap size={36} className="mx-auto text-yellow-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                Publicar es cuestión de segundos
+                Publicar en segundos
               </h3>
               <p className="text-zinc-400 text-sm">
-                Foto, título, precio y listo. Sin formularios eternos ni pasos
-                raros.
+                Foto, título, precio y listo. Sin pasos raros ni formularios
+                eternos que dan paja.
               </p>
             </motion.div>
 
@@ -278,16 +278,16 @@ export default function HomePage() {
               whileHover={{ y: -4 }}
             >
               <ShieldCheck size={36} className="mx-auto text-green-400 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Todo bajo control</h3>
+              <h3 className="text-lg font-semibold mb-2">Todo ordenado</h3>
               <p className="text-zinc-400 text-sm">
-                Tus publicaciones y chats quedan ordenados. Sabés siempre en qué
-                quedó cada conversación.
+                Tus publicaciones y chats quedan organizados. Sabés siempre en
+                qué quedó cada conversación.
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* TRENDING */}
+        {/* TRENDING (más marketplace) */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <Flame className="text-orange-400" />
@@ -319,7 +319,7 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* PRODUCTOS PRINCIPALES */}
+        {/* GRID PRINCIPAL DE PRODUCTOS */}
         <section className="space-y-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -360,7 +360,7 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* TESTIMONIOS */}
+        {/* TESTIMONIOS (premium, más editorial) */}
         <section className="space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-2xl md:text-3xl font-semibold">
@@ -400,15 +400,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA FINAL + FOOTER LIGERO */}
+        {/* CTA FINAL + FOOTER */}
         <section className="space-y-10 border-t border-white/10 pt-12">
           <div className="text-center space-y-4">
             <h3 className="text-3xl md:text-4xl font-semibold">
               Publicá algo hoy y probá qué pasa.
             </h3>
-            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
-              No necesitás armar una tienda. Solo subís un producto y empezás a
-              chatear. El resto se resuelve hablando.
+            <p className="text-zinc-400 mb-2 text-lg max-w-2xl mx-auto">
+              No necesitás armar una tienda. Subís un producto, hablás con
+              alguien y ves qué pasa. Lo peor que puede pasar es que alguien te
+              pregunte.
             </p>
             <Link
               href="/products/new"
@@ -419,9 +420,13 @@ export default function HomePage() {
           </div>
 
           <footer className="flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500 pt-4 border-t border-white/5">
-            <span>© {new Date().getFullYear()} MercadoChat. Hecho para vender hablando.</span>
+            <span>
+              © {new Date().getFullYear()} MercadoChat. Hecho para vender
+              hablando.
+            </span>
             <span className="text-zinc-600">
-              Beta privada · Construido con cariño y un poco de obsesión por el detalle.
+              Beta privada · Construido con cariño y un poco de obsesión por el
+              detalle.
             </span>
           </footer>
         </section>

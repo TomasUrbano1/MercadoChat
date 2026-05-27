@@ -51,6 +51,7 @@ export default function ProductCard({ product }: Props) {
       className="group"
     >
       <div className="relative">
+
         {/* ❤️ FAVORITE BUTTON */}
         {product.toggleFavorite && (
           <button
@@ -58,12 +59,17 @@ export default function ProductCard({ product }: Props) {
               e.preventDefault();
               product.toggleFavorite?.();
             }}
-            className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 backdrop-blur border border-white/10 hover:bg-black/80 transition shadow-md"
+            className="absolute top-3 right-3 z-20 p-2 rounded-full 
+                       bg-[var(--surface)]/70 backdrop-blur 
+                       border border-[var(--border)] 
+                       hover:bg-[var(--surface-hover)] transition shadow-md"
           >
             <Heart
               size={20}
               className={`transition ${
-                product.is_favorite ? "fill-red-500 text-red-500" : "text-white"
+                product.is_favorite
+                  ? "fill-red-500 text-red-500"
+                  : "text-[var(--text)]"
               }`}
             />
           </button>
@@ -71,7 +77,11 @@ export default function ProductCard({ product }: Props) {
 
         <Link
           href={`/products/${product.id}`}
-          className="block bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-600 transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-black/40"
+          className="block rounded-2xl overflow-hidden 
+                     bg-[var(--surface)] border border-[var(--border)]
+                     hover:border-[var(--accent)]/40 
+                     transition-all duration-300 
+                     shadow-lg hover:shadow-xl"
         >
           {/* IMAGE */}
           <div className="relative h-56 w-full overflow-hidden">
@@ -86,20 +96,27 @@ export default function ProductCard({ product }: Props) {
                 onError={() => setError(true)}
               />
             ) : (
-              <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+              <div className="flex items-center justify-center h-full 
+                              bg-[var(--surface-hover)] text-[var(--text-muted)]">
                 <ImageOff size={42} />
               </div>
             )}
 
             {/* CATEGORY BADGE */}
-            <span className="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10 shadow">
+            <span
+              className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs 
+                         bg-[var(--surface)]/70 backdrop-blur 
+                         text-[var(--text-muted)] border border-[var(--border)] shadow"
+            >
               {categoryLabel}
             </span>
 
             {/* STATUS BADGE */}
             {product.status && (
               <span
-                className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-medium border shadow ${statusColors[product.status]}`}
+                className={`absolute bottom-3 left-3 px-3 py-1 rounded-full 
+                            text-xs font-medium border shadow 
+                            ${statusColors[product.status]}`}
               >
                 {statusLabel[product.status]}
               </span>
@@ -108,15 +125,15 @@ export default function ProductCard({ product }: Props) {
 
           {/* CONTENT */}
           <div className="p-4 space-y-2">
-            <h3 className="font-semibold text-lg truncate text-white">
+            <h3 className="font-semibold text-lg truncate text-[var(--text)]">
               {product.title}
             </h3>
 
-            <p className="text-green-400 font-bold text-2xl tracking-tight">
+            <p className="text-green-500 font-bold text-2xl tracking-tight">
               ${product.price.toLocaleString("es-AR")}
             </p>
 
-            <p className="text-zinc-500 text-xs group-hover:text-zinc-300 transition">
+            <p className="text-[var(--text-muted)] text-xs group-hover:text-[var(--text)] transition">
               Ver detalles →
             </p>
           </div>

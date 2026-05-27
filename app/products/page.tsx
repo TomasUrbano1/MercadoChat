@@ -31,7 +31,7 @@ export default function ProductsPage() {
 
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
-  // Cargar favoritos del usuario
+  // Cargar favoritos
   useEffect(() => {
     if (!user) return;
 
@@ -41,9 +41,7 @@ export default function ProductsPage() {
         .select("product_id")
         .eq("user_id", user.id);
 
-      if (data) {
-        setFavorites(data.map((f) => f.product_id));
-      }
+      if (data) setFavorites(data.map((f) => f.product_id));
     }
 
     loadFavorites();
@@ -87,7 +85,7 @@ export default function ProductsPage() {
     loadCategories();
   }, []);
 
-  // Cargar subcategorías cuando cambia la categoría
+  // Cargar subcategorías
   useEffect(() => {
     if (!selectedCategory) {
       setSubcategories([]);
@@ -108,80 +106,68 @@ export default function ProductsPage() {
     loadSubcategories();
   }, [selectedCategory]);
 
-  // Cargar productos (paginado)
+  // Cargar productos
   async function fetchProducts(reset = false) {
-  if (reset) {
-    setLoading(true);
-    setPage(0);
-  } else {
-    setLoadingMore(true);
-  }
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    } else {
+      setLoadingMore(true);
+    }
 
-  const from = reset ? 0 : page * limit;
-  const to = from + limit - 1;
+    const from = reset ? 0 : page * limit;
+    const to = from + limit - 1;
 
-  let query = supabase
-    .from("products")
-    .select(`
-      id,
-      title,
-      price,
-      image_url,
-      description,
-      status,
-      category_id,
-      subcategory_id,
-      categories:category_id (name),
-      subcategories:subcategory_id (name)
-    `)
-    .order("inserted_at", { ascending: false })
-    .range(from, to);
+    let query = supabase
+      .from("products")
+      .select(`
+        id,
+        title,
+        price,
+        image_url,
+        description,
+        status,
+        category_id,
+        subcategory_id,
+        categories:category_id (name),
+        subcategories:subcategory_id (name)
+      `)
+      .order("inserted_at", { ascending: false })
+      .range(from, to);
 
-  // FILTRO POR CATEGORÍA
-  if (selectedCategory) {
-    query = query.eq("category_id", selectedCategory);
-  }
+    if (selectedCategory) query = query.eq("category_id", selectedCategory);
+    if (selectedSubcategory) query = query.eq("subcategory_id", selectedSubcategory);
 
-  // FILTRO POR SUBCATEGORÍA
-  if (selectedSubcategory) {
-    query = query.eq("subcategory_id", selectedSubcategory);
-  }
+    if (search.trim() !== "") {
+      query = query.or(
+        `title.ilike.%${search}%,description.ilike.%${search}%`
+      );
+    }
 
-  // BÚSQUEDA
-  if (search.trim() !== "") {
-    query = query.or(
-      `title.ilike.%${search}%,description.ilike.%${search}%`
-    );
-  }
+    const { data, error } = await query;
 
-  // EJECUTAR QUERY UNA SOLA VEZ
-  const { data, error } = await query;
+    if (error) {
+      console.error(error);
+      setLoading(false);
+      setLoadingMore(false);
+      return;
+    }
 
-  if (error) {
-    console.error(error);
+    if (data) {
+      const mapped = data.map((p) => ({
+        ...p,
+        category_name: p.categories?.[0]?.name || null,
+        subcategory_name: p.subcategories?.[0]?.name || null,
+        is_favorite: favorites.includes(p.id),
+      }));
+
+      if (reset) setProducts(mapped);
+      else setProducts((prev) => [...prev, ...mapped]);
+    }
+
     setLoading(false);
     setLoadingMore(false);
-    return;
   }
-
-  if (data) {
-    const mapped = data.map((p) => ({
-      ...p,
-      category_name: p.categories?.[0]?.name || null,
-      subcategory_name: p.subcategories?.[0]?.name || null,
-      is_favorite: favorites.includes(p.id),
-    }));
-
-    if (reset) {
-      setProducts(mapped);
-    } else {
-      setProducts((prev) => [...prev, ...mapped]);
-    }
-  }
-
-  setLoading(false);
-  setLoadingMore(false);
-}
 
   // Recargar cuando cambian filtros o búsqueda
   useEffect(() => {
@@ -196,7 +182,7 @@ export default function ProductsPage() {
     };
   }, [selectedCategory, selectedSubcategory, search, favorites]);
 
-  // Infinite scroll observer
+  // Infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -215,13 +201,11 @@ export default function ProductsPage() {
     };
   }, [loadingMore]);
 
-  // Cargar más cuando cambia la página
   useEffect(() => {
     if (page === 0) return;
     fetchProducts(false);
   }, [page]);
 
-  // Filtrar favoritos
   const visibleProducts = showFavoritesOnly
     ? products.filter((p) => favorites.includes(p.id))
     : products;
@@ -235,11 +219,11 @@ export default function ProductsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-6xl font-extrabold tracking-tight">
+        <h1 className="text-6xl font-extrabold tracking-tight text-[var(--text)]">
           Productos
         </h1>
-        <p className="text-zinc-400 text-lg max-w-xl mx-auto">
-          Explorá los artículos publicados por la comunidad. Todo en un solo lugar.
+        <p className="text-[var(--text-muted)] text-lg max-w-xl mx-auto">
+          Explorá los artículos publicados por la comunidad.
         </p>
       </motion.header>
 
@@ -248,21 +232,29 @@ export default function ProductsPage() {
         <input
           type="text"
           placeholder="Buscar productos..."
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)]
+            placeholder-[var(--text-muted)]
+            focus:border-[var(--accent)] transition
+          "
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* FAVORITOS TOGGLE */}
+      {/* FAVORITOS */}
       <div className="flex justify-center">
         <button
           onClick={() => setShowFavoritesOnly((prev) => !prev)}
-          className={`px-6 py-2 rounded-xl border transition ${
-            showFavoritesOnly
-              ? "bg-blue-600 border-blue-500 text-white"
-              : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-zinc-500"
-          }`}
+          className={`
+            px-6 py-2 rounded-xl border transition
+            ${
+              showFavoritesOnly
+                ? "bg-[var(--accent)] border-[var(--accent)] text-white"
+                : "bg-[var(--surface)] border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-hover)]"
+            }
+          `}
         >
           {showFavoritesOnly ? "Mostrar todos" : "Mostrar favoritos"}
         </button>
@@ -271,7 +263,11 @@ export default function ProductsPage() {
       {/* FILTERS */}
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <select
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition w-full sm:w-64"
+          className="
+            bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)]
+            focus:border-[var(--accent)] transition w-full sm:w-64
+          "
           value={selectedCategory}
           onChange={(e) => {
             setSelectedCategory(e.target.value);
@@ -287,7 +283,11 @@ export default function ProductsPage() {
         </select>
 
         <select
-          className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition w-full sm:w-64"
+          className="
+            bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)]
+            focus:border-[var(--accent)] transition w-full sm:w-64
+          "
           value={selectedSubcategory}
           onChange={(e) => setSelectedSubcategory(e.target.value)}
           disabled={subcategories.length === 0}
@@ -304,9 +304,11 @@ export default function ProductsPage() {
       {/* GRID */}
       <section>
         {loading ? (
-          <p className="text-center text-zinc-400">Cargando productos...</p>
+          <p className="text-center text-[var(--text-muted)]">
+            Cargando productos...
+          </p>
         ) : visibleProducts.length === 0 ? (
-          <p className="text-center text-zinc-400">
+          <p className="text-center text-[var(--text-muted)]">
             No hay productos que coincidan con la búsqueda o los filtros.
           </p>
         ) : (
@@ -317,11 +319,7 @@ export default function ProductsPage() {
               animate="visible"
               variants={{
                 hidden: {},
-                visible: {
-                  transition: {
-                    staggerChildren: 0.08,
-                  },
-                },
+                visible: { transition: { staggerChildren: 0.08 } },
               }}
             >
               {visibleProducts.map((product) => (
@@ -343,8 +341,8 @@ export default function ProductsPage() {
               ))}
             </motion.div>
 
-            {/* Loader para infinite scroll */}
-            <div ref={loaderRef} className="py-10 text-center text-zinc-500">
+            {/* Loader */}
+            <div ref={loaderRef} className="py-10 text-center text-[var(--text-muted)]">
               {loadingMore && "Cargando más productos..."}
             </div>
           </>

@@ -42,7 +42,9 @@ export default function ProductDetailPage({ params }: any) {
 
   const [isFavorite, setIsFavorite] = useState(false);
 
+  // -----------------------------
   // Cargar producto
+  // -----------------------------
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -67,16 +69,15 @@ export default function ProductDetailPage({ params }: any) {
         .single();
 
       if (data) {
-  const mapped: Product = {
-    ...data,
-    category_name: data.categories?.[0]?.name || null,
-    subcategory_name: data.subcategories?.[0]?.name || null,
-    seller: data.seller?.[0] || null,
-  };
+        const mapped: Product = {
+          ...data,
+          category_name: data.categories?.[0]?.name || null,
+          subcategory_name: data.subcategories?.[0]?.name || null,
+          seller: data.seller?.[0] || null,
+        };
 
-  setProduct(mapped);
-}
-
+        setProduct(mapped);
+      }
 
       setLoading(false);
     }
@@ -84,13 +85,15 @@ export default function ProductDetailPage({ params }: any) {
     load();
   }, [id]);
 
-  // Cargar favoritos del usuario
+  // -----------------------------
+  // Favoritos
+  // -----------------------------
   useEffect(() => {
     if (!user || !product) return;
 
-    const productId = product.id;
-
     async function loadFavorite() {
+      const productId = product!.id;
+
       const { data } = await supabase
         .from("favorites")
         .select("id")
@@ -104,44 +107,44 @@ export default function ProductDetailPage({ params }: any) {
     loadFavorite();
   }, [user, product]);
 
-  // Toggle favorito
   async function toggleFavorite() {
     if (!user) return router.push("/auth/login");
     if (!product) return;
-
-    const productId = product.id;
 
     if (isFavorite) {
       await supabase
         .from("favorites")
         .delete()
         .eq("user_id", user.id)
-        .eq("product_id", productId);
+        .eq("product_id", product.id);
 
       setIsFavorite(false);
     } else {
       await supabase.from("favorites").insert({
         user_id: user.id,
-        product_id: productId,
+        product_id: product.id,
       });
 
       setIsFavorite(true);
     }
   }
 
-  // Cargar más productos del vendedor
+  // -----------------------------
+  // Más del vendedor
+  // -----------------------------
   useEffect(() => {
     if (!product) return;
-
-    const sellerId = product.seller_id;
-    const currentProductId = product.id;
+    const currentProduct = product;
 
     async function loadMore() {
+      const sellerId = currentProduct.seller_id;
+      const productId = currentProduct.id;
+
       const { data } = await supabase
         .from("products")
         .select("id, title, price, image_url, status")
         .eq("seller_id", sellerId)
-        .neq("id", currentProductId)
+        .neq("id", productId)
         .order("inserted_at", { ascending: false })
         .limit(6);
 
@@ -151,21 +154,22 @@ export default function ProductDetailPage({ params }: any) {
     loadMore();
   }, [product]);
 
-  // Cargar productos relacionados
+  // -----------------------------
+  // Relacionados
+  // -----------------------------
   useEffect(() => {
-    if (!product) return;
-
-    const categoryId = product.category_id;
-    const currentProductId = product.id;
-
-    if (!categoryId) return;
+    if (!product || !product.category_id) return;
+    const currentProduct = product;
 
     async function loadRelated() {
+      const categoryId = currentProduct.category_id;
+      const productId = currentProduct.id;
+
       const { data } = await supabase
         .from("products")
         .select("id, title, price, image_url, status")
         .eq("category_id", categoryId)
-        .neq("id", currentProductId)
+        .neq("id", productId)
         .limit(6);
 
       if (data) setRelated(data);
@@ -174,6 +178,9 @@ export default function ProductDetailPage({ params }: any) {
     loadRelated();
   }, [product]);
 
+  // -----------------------------
+  // Chat
+  // -----------------------------
   async function handleChat() {
     if (!user) return router.push("/auth/login");
     if (!product) return;
@@ -182,7 +189,7 @@ export default function ProductDetailPage({ params }: any) {
       return alert("Este producto ya fue vendido");
     }
 
-    if (user.id === product?.seller_id) {
+    if (user.id === product.seller_id) {
       return alert("No podés chatear con vos mismo");
     }
 
@@ -206,6 +213,9 @@ export default function ProductDetailPage({ params }: any) {
     router.push(`/chat/${data.conversation.id}`);
   }
 
+  // -----------------------------
+  // Delete
+  // -----------------------------
   async function handleDelete() {
     if (!product) return;
 
@@ -229,9 +239,12 @@ export default function ProductDetailPage({ params }: any) {
     router.push("/profile/my-products");
   }
 
+  // -----------------------------
+  // Loading
+  // -----------------------------
   if (loading || !product) {
     return (
-      <p className="text-center text-zinc-400 mt-20 animate-pulse">
+      <p className="text-center text-[var(--text-muted)] mt-20 animate-pulse">
         Cargando producto...
       </p>
     );
@@ -252,8 +265,10 @@ export default function ProductDetailPage({ params }: any) {
     reserved: "Reservado",
     sold: "Vendido",
   };
+
   return (
     <div className="space-y-20">
+
       {/* PRODUCTO */}
       <motion.div
         className="grid lg:grid-cols-2 gap-14"
@@ -261,22 +276,31 @@ export default function ProductDetailPage({ params }: any) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
+
         {/* IMAGE */}
         <motion.div
-          className="relative h-[450px] w-full rounded-2xl overflow-hidden border border-white/10 shadow-xl shadow-black/30"
+          className="relative h-[450px] w-full rounded-2xl overflow-hidden 
+                     bg-[var(--surface)] border border-[var(--border)] 
+                     shadow-xl shadow-[var(--shadow-strong)]"
           whileHover={{ scale: 1.01 }}
           transition={{ duration: 0.3 }}
         >
+
           {/* ❤️ FAVORITE BUTTON */}
           {user && (
             <button
               onClick={toggleFavorite}
-              className="absolute top-4 right-4 z-20 p-3 rounded-full bg-black/60 backdrop-blur border border-white/10 hover:bg-black/80 transition"
+              className="absolute top-4 right-4 z-20 p-3 rounded-full 
+                         bg-[var(--surface)]/70 backdrop-blur 
+                         border border-[var(--border)] 
+                         hover:bg-[var(--surface-hover)] transition"
             >
               <Heart
                 size={24}
                 className={`transition ${
-                  isFavorite ? "fill-red-500 text-red-500" : "text-white"
+                  isFavorite
+                    ? "fill-red-500 text-red-500"
+                    : "text-[var(--text)]"
                 }`}
               />
             </button>
@@ -292,20 +316,27 @@ export default function ProductDetailPage({ params }: any) {
               sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+            <div className="flex items-center justify-center h-full 
+                            bg-[var(--surface-hover)] text-[var(--text-muted)]">
               <ImageOff size={50} />
             </div>
           )}
 
           {/* CATEGORY */}
-          <span className="absolute top-4 left-4 bg-black/60 backdrop-blur px-3 py-1 rounded-full text-xs text-zinc-200 border border-white/10">
+          <span
+            className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs 
+                       bg-[var(--surface)]/70 backdrop-blur 
+                       text-[var(--text-muted)] border border-[var(--border)]"
+          >
             {categoryLabel}
           </span>
 
           {/* STATUS BADGE */}
           {product.status && (
             <span
-              className={`absolute bottom-4 left-4 px-3 py-1 rounded-full text-xs font-medium border ${statusColors[product.status]}`}
+              className={`absolute bottom-4 left-4 px-3 py-1 rounded-full 
+                          text-xs font-medium border shadow 
+                          ${statusColors[product.status]}`}
             >
               {statusLabel[product.status]}
             </span>
@@ -314,18 +345,21 @@ export default function ProductDetailPage({ params }: any) {
 
         {/* INFO */}
         <div className="space-y-8">
+
           <div>
-            <h1 className="text-5xl font-extrabold tracking-tight">
+            <h1 className="text-5xl font-extrabold tracking-tight text-[var(--text)]">
               {product.title}
             </h1>
-            <p className="text-zinc-400 mt-2 text-lg">{categoryLabel}</p>
+            <p className="text-[var(--text-muted)] mt-2 text-lg">
+              {categoryLabel}
+            </p>
           </div>
 
-          <p className="text-green-400 text-5xl font-bold tracking-tight">
+          <p className="text-green-500 text-5xl font-bold tracking-tight">
             ${product.price.toLocaleString("es-AR")}
           </p>
 
-          <p className="text-zinc-300 leading-relaxed text-lg">
+          <p className="text-[var(--text)] leading-relaxed text-lg">
             {product.description || "Sin descripción."}
           </p>
 
@@ -348,7 +382,11 @@ export default function ProductDetailPage({ params }: any) {
               href={`/profile/${product.seller_id}`}
               className="flex items-center gap-4 mt-6 group"
             >
-              <div className="relative w-14 h-14 rounded-full overflow-hidden border border-white/10 group-hover:scale-105 transition">
+              <div
+                className="relative w-14 h-14 rounded-full overflow-hidden 
+                           border border-[var(--border)] 
+                           group-hover:scale-105 transition"
+              >
                 {product.seller.avatar_url ? (
                   <Image
                     src={product.seller.avatar_url}
@@ -358,17 +396,20 @@ export default function ProductDetailPage({ params }: any) {
                     quality={90}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+                  <div className="flex items-center justify-center h-full 
+                                  bg-[var(--surface-hover)] text-[var(--text-muted)]">
                     <ImageOff size={28} />
                   </div>
                 )}
               </div>
 
               <div>
-                <p className="text-white font-semibold group-hover:underline">
+                <p className="text-[var(--text)] font-semibold group-hover:underline">
                   {product.seller.full_name || "Vendedor"}
                 </p>
-                <p className="text-zinc-500 text-sm">Ver perfil del vendedor</p>
+                <p className="text-[var(--text-muted)] text-sm">
+                  Ver perfil del vendedor
+                </p>
               </div>
             </Link>
           )}
@@ -376,12 +417,18 @@ export default function ProductDetailPage({ params }: any) {
           {/* CTA */}
           {user?.id === product.seller_id ? (
             <div className="space-y-4">
-              <p className="text-zinc-500 italic">Este producto es tuyo.</p>
+              <p className="text-[var(--text-muted)] italic">
+                Este producto es tuyo.
+              </p>
 
               <div className="flex gap-4">
                 <Link
                   href={`/products/edit/${product.id}`}
-                  className="inline-flex items-center gap-2 bg-zinc-700 hover:bg-zinc-600 transition px-6 py-3 rounded-xl font-medium text-white text-lg"
+                  className="inline-flex items-center gap-2 
+                             bg-[var(--surface)] hover:bg-[var(--surface-hover)] 
+                             border border-[var(--border)]
+                             transition px-6 py-3 rounded-xl 
+                             font-medium text-[var(--text)] text-lg"
                 >
                   <Pencil size={20} />
                   Editar
@@ -390,7 +437,10 @@ export default function ProductDetailPage({ params }: any) {
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 transition px-6 py-3 rounded-xl font-medium text-white text-lg disabled:opacity-50"
+                  className="inline-flex items-center gap-2 
+                             bg-red-600 hover:bg-red-500 
+                             transition px-6 py-3 rounded-xl 
+                             font-medium text-white text-lg disabled:opacity-50"
                 >
                   <Trash2 size={20} />
                   {deleting ? "Eliminando..." : "Eliminar"}
@@ -405,7 +455,11 @@ export default function ProductDetailPage({ params }: any) {
             <motion.button
               onClick={handleChat}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 transition px-8 py-4 rounded-xl font-medium text-white text-lg shadow-lg shadow-blue-600/20"
+              className="inline-flex items-center gap-2 
+                         bg-blue-600 hover:bg-blue-500 
+                         transition px-8 py-4 rounded-xl 
+                         font-medium text-white text-lg 
+                         shadow-lg shadow-blue-600/20"
             >
               <MessageCircle size={22} />
               Chatear con el vendedor
@@ -417,14 +471,20 @@ export default function ProductDetailPage({ params }: any) {
       {/* MÁS DEL VENDEDOR */}
       {moreFromSeller.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold">Más del vendedor</h2>
+          <h2 className="text-3xl font-bold text-[var(--text)]">
+            Más del vendedor
+          </h2>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {moreFromSeller.map((p) => (
               <Link
                 key={p.id}
                 href={`/products/${p.id}`}
-                className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-black/30"
+                className="rounded-2xl overflow-hidden 
+                           bg-[var(--surface)] border border-[var(--border)]
+                           hover:border-[var(--accent)]/40 
+                           transition-all duration-300 
+                           shadow-lg hover:shadow-xl"
               >
                 <div className="relative h-48 w-full">
                   {p.image_url ? (
@@ -437,18 +497,19 @@ export default function ProductDetailPage({ params }: any) {
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+                    <div className="flex items-center justify-center h-full 
+                                    bg-[var(--surface-hover)] text-[var(--text-muted)]">
                       <ImageOff size={40} />
                     </div>
                   )}
                 </div>
 
                 <div className="p-4 space-y-1">
-                  <h3 className="font-semibold text-lg truncate text-white">
+                  <h3 className="font-semibold text-lg truncate text-[var(--text)]">
                     {p.title}
                   </h3>
 
-                  <p className="text-green-400 font-bold text-xl">
+                  <p className="text-green-500 font-bold text-xl">
                     ${p.price.toLocaleString("es-AR")}
                   </p>
                 </div>
@@ -461,14 +522,20 @@ export default function ProductDetailPage({ params }: any) {
       {/* RELACIONADOS */}
       {related.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold">Productos relacionados</h2>
+          <h2 className="text-3xl font-bold text-[var(--text)]">
+            Productos relacionados
+          </h2>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p) => (
               <Link
                 key={p.id}
                 href={`/products/${p.id}`}
-                className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-black/30"
+                className="rounded-2xl overflow-hidden 
+                           bg-[var(--surface)] border border-[var(--border)]
+                           hover:border-[var(--accent)]/40 
+                           transition-all duration-300 
+                           shadow-lg hover:shadow-xl"
               >
                 <div className="relative h-48 w-full">
                   {p.image_url ? (
@@ -481,18 +548,19 @@ export default function ProductDetailPage({ params }: any) {
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+                    <div className="flex items-center justify-center h-full 
+                                    bg-[var(--surface-hover)] text-[var(--text-muted)]">
                       <ImageOff size={40} />
                     </div>
                   )}
                 </div>
 
                 <div className="p-4 space-y-1">
-                  <h3 className="font-semibold text-lg truncate text-white">
+                  <h3 className="font-semibold text-lg truncate text-[var(--text)]">
                     {p.title}
                   </h3>
 
-                  <p className="text-green-400 font-bold text-xl">
+                  <p className="text-green-500 font-bold text-xl">
                     ${p.price.toLocaleString("es-AR")}
                   </p>
                 </div>

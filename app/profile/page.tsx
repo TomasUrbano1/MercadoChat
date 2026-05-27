@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // 🔥 Cargar perfil
+  // Cargar perfil
   useEffect(() => {
     if (!user) return;
 
@@ -54,7 +54,7 @@ export default function ProfilePage() {
     load();
   }, [user]);
 
-  // 🔥 Guardar perfil
+  // Guardar perfil
   async function handleSave() {
     if (!user) return;
 
@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
     let avatar_url = profile.avatar_url;
 
-    // 🔥 Subir avatar si cambió
+    // Subir avatar si cambió
     if (avatarFile) {
       const fileName = `${user.id}-${Date.now()}`;
 
@@ -75,11 +75,11 @@ export default function ProfilePage() {
           .from("avatars")
           .getPublicUrl(fileName);
 
-        avatar_url = `${publicUrl.publicUrl}?v=${Date.now()}`; // cache-busting
+        avatar_url = `${publicUrl.publicUrl}?v=${Date.now()}`;
       }
     }
 
-    // 🔥 Guardar perfil + presencia
+    // Guardar perfil
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -88,7 +88,6 @@ export default function ProfilePage() {
         city: profile.city,
         province: profile.province,
         avatar_url,
-        // presencia (se actualiza también desde SupabaseProvider)
         last_seen_at: new Date().toISOString(),
       })
       .eq("id", user.id);
@@ -100,7 +99,7 @@ export default function ProfilePage() {
       return;
     }
 
-    // 🔥 Actualizar el contexto global
+    // Actualizar contexto global
     const { data: updatedProfile } = await supabase
       .from("profiles")
       .select("*")
@@ -118,7 +117,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <p className="text-center text-zinc-400 mt-20 text-lg">
+      <p className="text-center text-[var(--text-muted)] mt-20 text-lg">
         Tenés que iniciar sesión para ver tu perfil.
       </p>
     );
@@ -126,7 +125,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <p className="text-center text-zinc-400 mt-20 animate-pulse">
+      <p className="text-center text-[var(--text-muted)] mt-20 animate-pulse">
         Cargando perfil...
       </p>
     );
@@ -141,23 +140,38 @@ export default function ProfilePage() {
     >
       {/* HEADER */}
       <div className="space-y-2">
-        <h1 className="text-5xl font-extrabold tracking-tight">Mi perfil</h1>
-        <p className="text-zinc-400 text-lg">Editá tu información personal.</p>
+        <h1 className="text-5xl font-extrabold tracking-tight text-[var(--text)]">
+          Mi perfil
+        </h1>
+        <p className="text-[var(--text-muted)] text-lg">
+          Editá tu información personal.
+        </p>
       </div>
 
       {/* AVATAR */}
       <div className="flex flex-col items-center gap-4">
-        <div className="relative w-32 h-32 rounded-full overflow-hidden border border-white/10 shadow-xl">
+        <div
+          className="
+            relative w-32 h-32 rounded-full overflow-hidden 
+            border border-[var(--border)] shadow-xl bg-[var(--surface)]
+          "
+        >
           {preview ? (
             <Image src={preview} alt="Avatar" fill className="object-cover" />
           ) : (
-            <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+            <div className="w-full h-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--text-muted)]">
               <Camera size={32} />
             </div>
           )}
         </div>
 
-        <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 transition px-4 py-2 rounded-xl text-sm text-zinc-300 border border-zinc-700">
+        <label
+          className="
+            cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)]
+            transition px-4 py-2 rounded-xl text-sm text-[var(--text)]
+            border border-[var(--border)]
+          "
+        >
           Cambiar foto
           <input
             type="file"
@@ -180,14 +194,24 @@ export default function ProfilePage() {
           onChange={(e) =>
             setProfile({ ...profile, full_name: e.target.value })
           }
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)] 
+            rounded-xl px-4 py-3 text-[var(--text)]
+            placeholder-[var(--text-muted)]
+            focus:border-[var(--accent)] transition
+          "
         />
 
         <textarea
           placeholder="Bio"
           value={profile.bio}
           onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white h-28 focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)] 
+            rounded-xl px-4 py-3 text-[var(--text)] h-28
+            placeholder-[var(--text-muted)]
+            focus:border-[var(--accent)] transition
+          "
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -195,7 +219,12 @@ export default function ProfilePage() {
             placeholder="Ciudad"
             value={profile.city}
             onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+            className="
+              w-full bg-[var(--surface)] border border-[var(--border)] 
+              rounded-xl px-4 py-3 text-[var(--text)]
+              placeholder-[var(--text-muted)]
+              focus:border-[var(--accent)] transition
+            "
           />
 
           <input
@@ -204,19 +233,33 @@ export default function ProfilePage() {
             onChange={(e) =>
               setProfile({ ...profile, province: e.target.value })
             }
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+            className="
+              w-full bg-[var(--surface)] border border-[var(--border)] 
+              rounded-xl px-4 py-3 text-[var(--text)]
+              placeholder-[var(--text-muted)]
+              focus:border-[var(--accent)] transition
+            "
           />
         </div>
 
         {/* EMAIL */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-500 text-sm">
+        <div
+          className="
+            bg-[var(--surface)] border border-[var(--border)] 
+            rounded-xl px-4 py-3 text-[var(--text-muted)] text-sm
+          "
+        >
           Email: {user.email}
         </div>
 
         {/* MIS PRODUCTOS */}
         <Link
           href="/profile/my-products"
-          className="block text-center bg-zinc-800 hover:bg-zinc-700 transition px-6 py-3 rounded-xl text-white font-medium border border-zinc-700"
+          className="
+            block text-center bg-[var(--surface)] hover:bg-[var(--surface-hover)]
+            transition px-6 py-3 rounded-xl text-[var(--text)] font-medium 
+            border border-[var(--border)]
+          "
         >
           Ver mis productos publicados
         </Link>
@@ -225,7 +268,12 @@ export default function ProfilePage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-500 transition px-6 py-4 rounded-xl text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50 w-full text-lg shadow-lg shadow-blue-600/20"
+          className="
+            bg-[var(--accent)] hover:bg-[var(--accent-hover)]
+            transition px-6 py-4 rounded-xl text-white font-medium 
+            flex items-center justify-center gap-2 disabled:opacity-50 
+            w-full text-lg shadow-lg shadow-[var(--accent)]/20
+          "
         >
           {saving && <Loader2 className="animate-spin" size={20} />}
           Guardar cambios

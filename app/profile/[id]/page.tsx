@@ -89,7 +89,7 @@ export default function PublicProfilePage({ params }: any) {
 
   if (loading || !profile) {
     return (
-      <p className="text-center text-zinc-400 mt-20 animate-pulse">
+      <p className="text-center text-[var(--text-muted)] mt-20 animate-pulse">
         Cargando perfil...
       </p>
     );
@@ -104,7 +104,12 @@ export default function PublicProfilePage({ params }: any) {
     >
       {/* HEADER */}
       <div className="flex flex-col items-center gap-6">
-        <div className="relative w-32 h-32 rounded-full overflow-hidden border border-white/10 shadow-xl">
+        <div
+          className="
+            relative w-32 h-32 rounded-full overflow-hidden 
+            border border-[var(--border)] shadow-xl bg-[var(--surface)]
+          "
+        >
           {profile.avatar_url ? (
             <Image
               src={profile.avatar_url}
@@ -113,25 +118,27 @@ export default function PublicProfilePage({ params }: any) {
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+            <div className="w-full h-full bg-[var(--surface-hover)] flex items-center justify-center text-[var(--text-muted)]">
               <ImageOff size={40} />
             </div>
           )}
         </div>
 
         <div className="text-center space-y-1">
-          <h1 className="text-4xl font-extrabold tracking-tight">
+          <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text)]">
             {profile.full_name || "Usuario sin nombre"}
           </h1>
 
           {profile.city && profile.province && (
-            <p className="text-zinc-400">
+            <p className="text-[var(--text-muted)]">
               {profile.city}, {profile.province}
             </p>
           )}
 
           {profile.bio && (
-            <p className="text-zinc-300 max-w-md mx-auto">{profile.bio}</p>
+            <p className="text-[var(--text)] max-w-md mx-auto opacity-90">
+              {profile.bio}
+            </p>
           )}
         </div>
 
@@ -140,7 +147,12 @@ export default function PublicProfilePage({ params }: any) {
           <motion.button
             onClick={handleChat}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 transition px-8 py-4 rounded-xl font-medium text-white text-lg shadow-lg shadow-blue-600/20"
+            className="
+              inline-flex items-center gap-2 
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)]
+              transition px-8 py-4 rounded-xl 
+              font-medium text-white text-lg shadow-lg shadow-[var(--accent)]/20
+            "
           >
             <MessageCircle size={22} />
             Chatear con {profile.full_name?.split(" ")[0] || "el vendedor"}
@@ -150,10 +162,12 @@ export default function PublicProfilePage({ params }: any) {
 
       {/* PRODUCTS */}
       <div className="space-y-6">
-        <h2 className="text-3xl font-bold">Publicaciones</h2>
+        <h2 className="text-3xl font-bold text-[var(--text)]">Publicaciones</h2>
 
         {products.length === 0 ? (
-          <p className="text-zinc-400">Este usuario no tiene productos publicados.</p>
+          <p className="text-[var(--text-muted)]">
+            Este usuario no tiene productos publicados.
+          </p>
         ) : (
           <motion.div
             className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
@@ -176,7 +190,13 @@ export default function PublicProfilePage({ params }: any) {
               >
                 <Link
                   href={`/products/${product.id}`}
-                  className="block bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-black/30"
+                  className="
+                    block rounded-2xl overflow-hidden 
+                    bg-[var(--surface)] border border-[var(--border)]
+                    hover:border-[var(--accent)]/40 
+                    transition-all duration-300 
+                    shadow-lg hover:shadow-xl
+                  "
                 >
                   <div className="relative h-48 w-full overflow-hidden">
                     {product.image_url ? (
@@ -187,18 +207,18 @@ export default function PublicProfilePage({ params }: any) {
                         className="object-cover"
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+                      <div className="flex items-center justify-center h-full bg-[var(--surface-hover)] text-[var(--text-muted)]">
                         <ImageOff size={40} />
                       </div>
                     )}
                   </div>
 
                   <div className="p-4 space-y-1">
-                    <h3 className="font-semibold text-lg truncate text-white">
+                    <h3 className="font-semibold text-lg truncate text-[var(--text)]">
                       {product.title}
                     </h3>
 
-                    <p className="text-green-400 font-bold text-xl">
+                    <p className="text-green-500 font-bold text-xl">
                       ${product.price.toLocaleString("es-AR")}
                     </p>
                   </div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useSupabase } from "@/components/SupabaseProvider";
 import { supabase } from "@/lib/supabaseClient";
@@ -18,26 +18,11 @@ export default function Navbar() {
 
   const { user, profile } = useSupabase();
 
-  // 🔥 contador de mensajes no leídos
+  // -------------------------------
+  // 🔥 UNREAD MESSAGES
+  // -------------------------------
   const [unreadCount, setUnreadCount] = useState(0);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.refresh();
-  }
-
-  // Cerrar menú al hacer click fuera
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Cargar cantidad inicial de mensajes no leídos
   useEffect(() => {
     if (!user) return;
 
@@ -54,7 +39,6 @@ export default function Navbar() {
     loadUnread();
   }, [user]);
 
-  // Realtime unread
   useEffect(() => {
     if (!user) return;
 
@@ -62,14 +46,9 @@ export default function Navbar() {
       .channel("navbar-unread-messages")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-        },
+        { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const msg = payload.new;
-
           if (msg.sender_id !== user.id) {
             setUnreadCount((prev) => prev + 1);
           }
@@ -78,9 +57,58 @@ export default function Navbar() {
       .subscribe();
 
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [user]);
+
+  // -------------------------------
+  // 🔥 THEME SYSTEM
+  // -------------------------------
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+
+    if (saved === "light" || saved === "dark") {
+      setTheme(saved);
+      document.documentElement.classList.toggle("light", saved === "light");
+      return;
+    }
+
+    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+    const initial = prefersLight ? "light" : "dark";
+
+    setTheme(initial);
+    document.documentElement.classList.toggle("light", initial === "light");
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    localStorage.setItem("theme", next);
+    document.documentElement.classList.toggle("light", next === "light");
+  }
+
+  // -------------------------------
+  // 🔥 LOGOUT
+  // -------------------------------
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.refresh();
+  }
+
+  // -------------------------------
+  // 🔥 CLOSE MENU ON OUTSIDE CLICK
+  // -------------------------------
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const links = [
     { href: "/", label: "Inicio" },
@@ -89,9 +117,9 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-zinc-950/70 border-b border-white/10">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-[var(--bg-soft)]/70 border-b border-[var(--border)] transition-colors">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        
+
         {/* LOGO */}
         <Link href="/" className="flex items-center gap-3 group">
           <Image
@@ -108,6 +136,7 @@ export default function Navbar() {
 
         {/* DESKTOP NAV */}
         <div className="hidden md:flex items-center gap-8">
+
           {links.map(({ href, label }) => {
             const active = pathname === href;
 
@@ -117,8 +146,8 @@ export default function Navbar() {
                 href={href}
                 className={`relative text-sm transition ${
                   active
-                    ? "text-white font-medium"
-                    : "text-zinc-400 hover:text-white"
+                    ? "text-[var(--text)] font-medium"
+                    : "text-[var(--text-muted)] hover:text-[var(--text)]"
                 }`}
               >
                 <div className="flex items-center gap-1">
@@ -153,12 +182,24 @@ export default function Navbar() {
             Publicar
           </Link>
 
+          {/* THEME TOGGLE */}
+          <button
+            onClick={toggleTheme}
+            className="w-9 h-9 flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition"
+          >
+            {theme === "light" ? (
+              <Moon size={18} className="text-zinc-700" />
+            ) : (
+              <Sun size={18} className="text-yellow-300" />
+            )}
+          </button>
+
           {/* AUTH */}
           {!user ? (
             <div className="flex items-center gap-4">
               <Link
                 href="/auth/login"
-                className="text-zinc-400 hover:text-white transition"
+                className="text-[var(--text-muted)] hover:text-[var(--text)] transition"
               >
                 Iniciar sesión
               </Link>
@@ -195,11 +236,11 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-3 w-44 bg-zinc-900 border border-white/10 rounded-xl shadow-xl overflow-hidden"
+                    className="absolute right-0 mt-3 w-44 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden"
                   >
                     <Link
                       href="/profile"
-                      className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800"
+                      className="block px-4 py-3 text-sm text-[var(--text-muted)] hover:bg-[var(--surface-hover)]"
                       onClick={() => setMenuOpen(false)}
                     >
                       Mi perfil
@@ -207,7 +248,7 @@ export default function Navbar() {
 
                     <Link
                       href="/chat"
-                      className="block px-4 py-3 text-sm text-zinc-300 hover:bg-zinc-800 flex items-center gap-2"
+                      className="block px-4 py-3 text-sm text-[var(--text-muted)] hover:bg-[var(--surface-hover)] flex items-center gap-2"
                       onClick={() => setMenuOpen(false)}
                     >
                       Conversaciones
@@ -236,7 +277,7 @@ export default function Navbar() {
 
         {/* MOBILE BUTTON */}
         <button
-          className="md:hidden text-zinc-300"
+          className="md:hidden text-[var(--text-muted)]"
           onClick={() => setOpen(!open)}
         >
           {open ? <X size={26} /> : <Menu size={26} />}
@@ -251,7 +292,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden bg-zinc-950/90 backdrop-blur-xl border-t border-white/10 px-6 py-4 space-y-4"
+            className="md:hidden bg-[var(--bg-soft)]/90 backdrop-blur-xl border-t border-[var(--border)] px-6 py-4 space-y-4"
           >
             {links.map(({ href, label }) => {
               const active = pathname === href;
@@ -263,8 +304,8 @@ export default function Navbar() {
                   onClick={() => setOpen(false)}
                   className={`block text-sm py-2 ${
                     active
-                      ? "text-white font-medium"
-                      : "text-zinc-400 hover:text-white"
+                      ? "text-[var(--text)] font-medium"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -280,6 +321,7 @@ export default function Navbar() {
               );
             })}
 
+            {/* PUBLICAR */}
             <Link
               href="/products/new"
               onClick={() => setOpen(false)}
@@ -288,12 +330,29 @@ export default function Navbar() {
               Publicar producto
             </Link>
 
+            {/* THEME TOGGLE MOBILE */}
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition text-sm"
+            >
+              {theme === "light" ? (
+                <>
+                  <Moon size={18} /> Activar modo oscuro
+                </>
+              ) : (
+                <>
+                  <Sun size={18} /> Activar modo claro
+                </>
+              )}
+            </button>
+
+            {/* AUTH MOBILE */}
             {!user ? (
               <>
                 <Link
                   href="/auth/login"
                   onClick={() => setOpen(false)}
-                  className="text-zinc-400 hover:text-white transition block"
+                  className="text-[var(--text-muted)] hover:text-[var(--text)] transition block"
                 >
                   Iniciar sesión
                 </Link>
@@ -311,7 +370,7 @@ export default function Navbar() {
                 <Link
                   href="/profile"
                   onClick={() => setOpen(false)}
-                  className="text-zinc-400 hover:text-white transition block"
+                  className="text-[var(--text-muted)] hover:text-[var(--text)] transition block"
                 >
                   Mi perfil
                 </Link>
@@ -319,7 +378,7 @@ export default function Navbar() {
                 <Link
                   href="/chat"
                   onClick={() => setOpen(false)}
-                  className="text-zinc-400 hover:text-white transition block flex items-center gap-2"
+                  className="text-[var(--text-muted)] hover:text-[var(--text)] transition block flex items-center gap-2"
                 >
                   Conversaciones
                   {unreadCount > 0 && (

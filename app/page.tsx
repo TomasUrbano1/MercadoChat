@@ -75,7 +75,8 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-zinc-950 via-black to-zinc-950 text-white">
       <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-10 space-y-24">
-        {/* HERO PREMIUM */}
+
+        {/* HERO */}
         <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-blue-600/20 via-zinc-950 to-black shadow-[0_40px_120px_rgba(0,0,0,0.9)]">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-40 -right-10 w-80 h-80 bg-blue-500/25 blur-3xl rounded-full" />
@@ -84,7 +85,7 @@ export default function HomePage() {
           </div>
 
           <div className="relative grid gap-12 lg:grid-cols-[1.4fr,1fr] items-center px-6 py-12 md:px-10 md:py-16">
-            {/* Left: copy + CTA */}
+            {/* LEFT */}
             <motion.div
               initial={{ opacity: 0, x: -25 }}
               animate={{ opacity: 1, x: 0 }}
@@ -144,7 +145,7 @@ export default function HomePage() {
               </div>
             </motion.div>
 
-            {/* Right: chat preview + quick search */}
+            {/* RIGHT */}
             <motion.div
               initial={{ opacity: 0, x: 25 }}
               animate={{ opacity: 1, x: 0 }}
@@ -204,7 +205,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* NAV + CATEGORIES (premium + marketplace) */}
+        {/* CATEGORIES */}
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
@@ -234,7 +235,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FEATURES PREMIUM */}
+        {/* FEATURES */}
         <section className="space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-2xl md:text-3xl font-semibold">
@@ -287,7 +288,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* TRENDING (más marketplace) */}
+        {/* TRENDING */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <Flame className="text-orange-400" />
@@ -319,7 +320,7 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* GRID PRINCIPAL DE PRODUCTOS */}
+        {/* GRID PRINCIPAL */}
         <section className="space-y-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -360,7 +361,7 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* TESTIMONIOS (premium, más editorial) */}
+        {/* TESTIMONIOS */}
         <section className="space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-2xl md:text-3xl font-semibold">
@@ -400,7 +401,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA FINAL + FOOTER */}
+        {/* CTA + FOOTER */}
         <section className="space-y-10 border-t border-white/10 pt-12">
           <div className="text-center space-y-4">
             <h3 className="text-3xl md:text-4xl font-semibold">
@@ -408,8 +409,7 @@ export default function HomePage() {
             </h3>
             <p className="text-zinc-400 mb-2 text-lg max-w-2xl mx-auto">
               No necesitás armar una tienda. Subís un producto, hablás con
-              alguien y ves qué pasa. Lo peor que puede pasar es que alguien te
-              pregunte.
+              alguien y ves qué pasa.
             </p>
             <Link
               href="/products/new"
@@ -419,15 +419,19 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <footer className="flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500 pt-4 border-t border-white/5">
-            <span>
-              © {new Date().getFullYear()} MercadoChat. Hecho para vender
-              hablando.
-            </span>
-            <span className="text-zinc-600">
-              Beta privada · Construido con cariño y un poco de obsesión por el
-              detalle.
-            </span>
+          <footer className="flex flex-col items-center gap-6 md:gap-0 md:flex-row md:justify-between py-8">
+            <div className="text-sm text-zinc-400">© {new Date().getFullYear()} MercadoChat</div>
+            <div className="flex gap-4">
+              <Link href="/about" className="text-zinc-400 hover:text-white text-sm">
+                About
+              </Link>
+              <Link href="/terms" className="text-zinc-400 hover:text-white text-sm">
+                Terms
+              </Link>
+              <Link href="/privacy" className="text-zinc-400 hover:text-white text-sm">
+                Privacy
+              </Link>
+            </div>
           </footer>
         </section>
       </div>

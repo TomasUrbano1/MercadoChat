@@ -14,15 +14,12 @@ export default function NewProductPage() {
 
   const [loading, setLoading] = useState(false);
 
-  // Imagen
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // Categorías
   const [categories, setCategories] = useState<any[]>([]);
   const [subcategories, setSubcategories] = useState<any[]>([]);
 
-  // Form
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -31,7 +28,7 @@ export default function NewProductPage() {
     subcategory_id: "",
   });
 
-  // OPTIMIZAR IMAGEN ANTES DE SUBIR
+  // Optimizar imagen antes de subir
   async function optimizeImage(file: File): Promise<File> {
     const bitmap = await createImageBitmap(file);
     const canvas = document.createElement("canvas");
@@ -54,7 +51,7 @@ export default function NewProductPage() {
     });
   }
 
-  // Cargar categorías al montar
+  // Cargar categorías
   useEffect(() => {
     async function loadCategories() {
       const { data } = await supabase
@@ -68,7 +65,7 @@ export default function NewProductPage() {
     loadCategories();
   }, []);
 
-  // Cargar subcategorías cuando cambia la categoría
+  // Cargar subcategorías
   useEffect(() => {
     if (!form.category_id) {
       setSubcategories([]);
@@ -100,7 +97,7 @@ export default function NewProductPage() {
 
     let image_url = "";
 
-    // SUBIR IMAGEN OPTIMIZADA
+    // Subir imagen optimizada
     if (imageFile) {
       const optimized = await optimizeImage(imageFile);
       const fileName = `${Date.now()}-${optimized.name}`;
@@ -123,7 +120,7 @@ export default function NewProductPage() {
       image_url = publicUrl.publicUrl;
     }
 
-    // GUARDAR PRODUCTO
+    // Guardar producto
     const { data, error } = await supabase
       .from("products")
       .insert({
@@ -156,11 +153,12 @@ export default function NewProductPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      {/* HEADER */}
       <div className="space-y-2">
-        <h1 className="text-5xl font-extrabold tracking-tight">
+        <h1 className="text-5xl font-extrabold tracking-tight text-[var(--text)]">
           Nuevo producto
         </h1>
-        <p className="text-zinc-400 text-lg">
+        <p className="text-[var(--text-muted)] text-lg">
           Publicá tu artículo en minutos.
         </p>
       </div>
@@ -169,14 +167,24 @@ export default function NewProductPage() {
         {/* TÍTULO */}
         <input
           placeholder="Título del producto"
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)]
+            placeholder-[var(--text-muted)]
+            focus:border-[var(--accent)] transition
+          "
           onChange={(e) => setForm({ ...form, title: e.target.value })}
         />
 
         {/* DESCRIPCIÓN */}
         <textarea
           placeholder="Descripción (opcional)"
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white h-32 focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)] h-32
+            placeholder-[var(--text-muted)]
+            focus:border-[var(--accent)] transition
+          "
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
 
@@ -184,13 +192,22 @@ export default function NewProductPage() {
         <input
           type="number"
           placeholder="Precio"
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)]
+            placeholder-[var(--text-muted)]
+            focus:border-[var(--accent)] transition
+          "
           onChange={(e) => setForm({ ...form, price: e.target.value })}
         />
 
         {/* CATEGORÍA */}
         <select
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+          className="
+            w-full bg-[var(--surface)] border border-[var(--border)]
+            rounded-xl px-4 py-3 text-[var(--text)]
+            focus:border-[var(--accent)] transition
+          "
           value={form.category_id}
           onChange={(e) =>
             setForm({
@@ -211,7 +228,11 @@ export default function NewProductPage() {
         {/* SUBCATEGORÍA */}
         {subcategories.length > 0 && (
           <select
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition"
+            className="
+              w-full bg-[var(--surface)] border border-[var(--border)]
+              rounded-xl px-4 py-3 text-[var(--text)]
+              focus:border-[var(--accent)] transition
+            "
             value={form.subcategory_id}
             onChange={(e) =>
               setForm({ ...form, subcategory_id: e.target.value })
@@ -228,13 +249,22 @@ export default function NewProductPage() {
 
         {/* IMAGEN */}
         <div className="space-y-3">
-          <label className="text-zinc-400 text-sm">Imagen del producto</label>
+          <label className="text-[var(--text-muted)] text-sm">
+            Imagen del producto
+          </label>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col items-center justify-center gap-3 text-zinc-400 hover:border-zinc-700 transition cursor-pointer">
+          <div
+            className="
+              bg-[var(--surface)] border border-[var(--border)]
+              rounded-xl p-4 flex flex-col items-center justify-center gap-3
+              text-[var(--text-muted)] hover:bg-[var(--surface-hover)]
+              transition cursor-pointer
+            "
+          >
             <input
               type="file"
               accept="image/*"
-              className="w-full text-sm text-zinc-300 cursor-pointer"
+              className="w-full text-sm cursor-pointer text-[var(--text)]"
               onChange={(e) => {
                 const file = e.target.files?.[0] ?? null;
                 setImageFile(file);
@@ -250,7 +280,12 @@ export default function NewProductPage() {
             )}
 
             {preview && (
-              <div className="relative w-full h-56 rounded-xl overflow-hidden border border-zinc-800">
+              <div
+                className="
+                  relative w-full h-56 rounded-xl overflow-hidden 
+                  border border-[var(--border)]
+                "
+              >
                 <Image
                   src={preview}
                   alt="Preview"
@@ -267,7 +302,12 @@ export default function NewProductPage() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-500 transition px-6 py-4 rounded-xl text-white font-medium flex items-center justify-center gap-2 disabled:opacity-50 w-full text-lg shadow-lg shadow-blue-600/20"
+          className="
+            bg-[var(--accent)] hover:bg-[var(--accent-hover)]
+            transition px-6 py-4 rounded-xl text-white font-medium 
+            flex items-center justify-center gap-2 disabled:opacity-50 
+            w-full text-lg shadow-lg shadow-[var(--accent)]/20
+          "
         >
           {loading && <Loader2 className="animate-spin" size={20} />}
           Publicar producto

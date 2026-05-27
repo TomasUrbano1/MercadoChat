@@ -59,7 +59,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     })}`;
   };
 
-  // Cargar info desde API (más estable)
+  // Cargar info desde API
   useEffect(() => {
     if (!user) return;
 
@@ -100,7 +100,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
     load();
   }, [conversationId, user]);
 
-  // Realtime: presencia + typing
+  // Realtime presencia + typing
   useEffect(() => {
     if (!info?.otherUser?.id || !supabase) return;
 
@@ -171,7 +171,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
 
   if (!user) {
     return (
-      <motion.p className="text-center text-zinc-400 mt-20 text-lg">
+      <motion.p className="text-center text-[var(--text-muted)] mt-20 text-lg">
         Tenés que iniciar sesión para ver esta conversación.
       </motion.p>
     );
@@ -179,7 +179,7 @@ export default function ConversationPage({ params }: ConversationPageProps) {
 
   if (loading || !info) {
     return (
-      <p className="text-center text-zinc-400 mt-20 animate-pulse">
+      <p className="text-center text-[var(--text-muted)] mt-20 animate-pulse">
         Cargando conversación...
       </p>
     );
@@ -194,8 +194,20 @@ export default function ConversationPage({ params }: ConversationPageProps) {
   return (
     <motion.div className="max-w-4xl mx-auto space-y-6">
       {/* HEADER */}
-      <div className="flex items-center gap-4 bg-zinc-900/60 border border-white/10 p-4 rounded-2xl backdrop-blur-xl relative">
-        <div className="relative w-14 h-14 rounded-full overflow-hidden border border-white/10">
+      <div
+        className="
+          flex items-center gap-4 
+          bg-[var(--surface)] border border-[var(--border)] 
+          p-4 rounded-2xl shadow-sm
+        "
+      >
+        {/* AVATAR */}
+        <div
+          className="
+            relative w-14 h-14 rounded-full overflow-hidden 
+            border border-[var(--border)] bg-[var(--surface-hover)]
+          "
+        >
           {info.otherUser.avatar_url ? (
             <Image
               src={info.otherUser.avatar_url}
@@ -204,44 +216,63 @@ export default function ConversationPage({ params }: ConversationPageProps) {
               className="object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+            <div className="flex items-center justify-center h-full text-[var(--text-muted)]">
               ?
             </div>
           )}
         </div>
 
+        {/* USER INFO */}
         <div className="flex-1">
-          <p className="text-white font-semibold text-lg">
+          <p className="text-[var(--text)] font-semibold text-lg">
             {info.otherUser.full_name ?? "Usuario"}
           </p>
-          <p className="text-zinc-400 text-sm">{statusText}</p>
+          <p className="text-[var(--text-muted)] text-sm">{statusText}</p>
         </div>
 
+        {/* ACTIONS */}
         <div className="flex items-center gap-3">
           <button
             onClick={archiveConversation}
-            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition"
+            className="
+              p-2 rounded-lg bg-[var(--surface)] 
+              border border-[var(--border)]
+              hover:bg-[var(--surface-hover)] transition
+            "
           >
             <Archive
               size={20}
-              className={info.is_archived ? "text-yellow-400" : "text-zinc-300"}
+              className={
+                info.is_archived ? "text-yellow-400" : "text-[var(--text-muted)]"
+              }
             />
           </button>
 
           <button
             onClick={blockConversation}
-            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-white/10 transition"
+            className="
+              p-2 rounded-lg bg-[var(--surface)] 
+              border border-[var(--border)]
+              hover:bg-[var(--surface-hover)] transition
+            "
           >
             <Ban
               size={20}
-              className={info.is_blocked ? "text-red-500" : "text-zinc-300"}
+              className={
+                info.is_blocked ? "text-red-500" : "text-[var(--text-muted)]"
+              }
             />
           </button>
         </div>
 
+        {/* PRODUCT */}
         <Link
           href={`/products/${info.product.id}`}
-          className="flex items-center gap-3 bg-zinc-800/50 px-3 py-2 rounded-xl border border-white/10 hover:bg-zinc-800 transition ml-4"
+          className="
+            flex items-center gap-3 
+            bg-[var(--surface-hover)] px-3 py-2 rounded-xl 
+            border border-[var(--border)] hover:bg-[var(--surface)] transition ml-4
+          "
         >
           {info.product.image_url ? (
             <div className="relative w-12 h-12 rounded-lg overflow-hidden">
@@ -253,15 +284,16 @@ export default function ConversationPage({ params }: ConversationPageProps) {
               />
             </div>
           ) : (
-            <div className="w-12 h-12 bg-zinc-800 rounded-lg" />
+            <div className="w-12 h-12 bg-[var(--surface)] rounded-lg" />
           )}
 
-          <p className="text-sm text-zinc-300 max-w-[120px] truncate">
+          <p className="text-sm text-[var(--text-muted)] max-w-[120px] truncate">
             {info.product.title}
           </p>
         </Link>
       </div>
 
+      {/* CHAT */}
       <ChatWindow conversationId={conversationId} currentUserId={user.id} />
     </motion.div>
   );

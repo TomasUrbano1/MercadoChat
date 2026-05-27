@@ -120,15 +120,13 @@ export default function MyProductsPage() {
     }
 
     setProducts((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, status: newStatus } : p
-      )
+      prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
     );
   }
 
   if (!user) {
     return (
-      <p className="text-center text-zinc-400 mt-20 text-lg">
+      <p className="text-center text-[var(--text-muted)] mt-20 text-lg">
         Tenés que iniciar sesión para ver tus productos.
       </p>
     );
@@ -143,41 +141,45 @@ export default function MyProductsPage() {
     >
       {/* HEADER */}
       <div className="space-y-2">
-        <h1 className="text-5xl font-extrabold tracking-tight">
+        <h1 className="text-5xl font-extrabold tracking-tight text-[var(--text)]">
           Mis productos publicados
         </h1>
-        <p className="text-zinc-400 text-lg">
+        <p className="text-[var(--text-muted)] text-lg">
           Administrá tus publicaciones.
         </p>
       </div>
 
       {/* STATS */}
       <div className="grid sm:grid-cols-3 gap-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
-          <p className="text-4xl font-bold text-white">{products.length}</p>
-          <p className="text-zinc-500 mt-1">Productos publicados</p>
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-center shadow">
+          <p className="text-4xl font-bold text-[var(--text)]">
+            {products.length}
+          </p>
+          <p className="text-[var(--text-muted)] mt-1">Productos publicados</p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
-          <p className="text-4xl font-bold text-green-400">
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-center shadow">
+          <p className="text-4xl font-bold text-green-500">
             ${totalValue.toLocaleString("es-AR")}
           </p>
-          <p className="text-zinc-500 mt-1">Valor total</p>
+          <p className="text-[var(--text-muted)] mt-1">Valor total</p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
-          <p className="text-4xl font-bold text-blue-400">
+        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 text-center shadow">
+          <p className="text-4xl font-bold text-blue-500">
             {products.filter((p) => p.image_url).length}
           </p>
-          <p className="text-zinc-500 mt-1">Con foto</p>
+          <p className="text-[var(--text-muted)] mt-1">Con foto</p>
         </div>
       </div>
 
       {/* LISTADO */}
       {loading ? (
-        <p className="text-center text-zinc-400">Cargando productos...</p>
+        <p className="text-center text-[var(--text-muted)]">
+          Cargando productos...
+        </p>
       ) : products.length === 0 ? (
-        <p className="text-center text-zinc-400">
+        <p className="text-center text-[var(--text-muted)]">
           Todavía no publicaste ningún producto.
         </p>
       ) : (
@@ -201,7 +203,13 @@ export default function MyProductsPage() {
             >
               <Link
                 href={`/products/${p.id}`}
-                className="block bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-300 hover:shadow-xl hover:shadow-black/30"
+                className="
+                  block rounded-2xl overflow-hidden 
+                  bg-[var(--surface)] border border-[var(--border)]
+                  hover:border-[var(--accent)]/40 
+                  transition-all duration-300 
+                  shadow-lg hover:shadow-xl
+                "
               >
                 <div className="relative h-48 w-full">
                   {p.image_url ? (
@@ -212,23 +220,23 @@ export default function MyProductsPage() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full bg-zinc-800 text-zinc-500">
+                    <div className="flex items-center justify-center h-full bg-[var(--surface-hover)] text-[var(--text-muted)]">
                       <ImageOff size={40} />
                     </div>
                   )}
                 </div>
 
                 <div className="p-4 space-y-1">
-                  <h3 className="font-semibold text-lg truncate text-white">
+                  <h3 className="font-semibold text-lg truncate text-[var(--text)]">
                     {p.title}
                   </h3>
 
-                  <p className="text-green-400 font-bold text-xl">
+                  <p className="text-green-500 font-bold text-xl">
                     ${p.price.toLocaleString("es-AR")}
                   </p>
 
                   {p.category_name && (
-                    <p className="text-zinc-500 text-sm">
+                    <p className="text-[var(--text-muted)] text-sm">
                       {p.subcategory_name
                         ? `${p.category_name} • ${p.subcategory_name}`
                         : p.category_name}
@@ -242,16 +250,22 @@ export default function MyProductsPage() {
                 {/* EDIT */}
                 <Link
                   href={`/products/edit/${p.id}`}
-                  className="p-2 bg-zinc-900 border border-zinc-700 rounded-xl hover:bg-zinc-800 transition"
+                  className="
+                    p-2 bg-[var(--surface)] border border-[var(--border)] 
+                    rounded-xl hover:bg-[var(--surface-hover)] transition
+                  "
                 >
-                  <Pencil size={18} className="text-zinc-300" />
+                  <Pencil size={18} className="text-[var(--text-muted)]" />
                 </Link>
 
                 {/* DUPLICATE */}
                 <button
                   onClick={() => handleDuplicate(p)}
                   disabled={duplicating === p.id}
-                  className="p-2 bg-blue-900/40 border border-blue-800 rounded-xl hover:bg-blue-900/60 transition disabled:opacity-50"
+                  className="
+                    p-2 bg-blue-500/10 border border-blue-500/30 
+                    rounded-xl hover:bg-blue-500/20 transition disabled:opacity-50
+                  "
                 >
                   <Copy size={18} className="text-blue-400" />
                 </button>
@@ -260,21 +274,26 @@ export default function MyProductsPage() {
                 <button
                   onClick={() => handleDelete(p.id)}
                   disabled={deleting === p.id}
-                  className="p-2 bg-red-900/40 border border-red-800 rounded-xl hover:bg-red-900/60 transition disabled:opacity-50"
+                  className="
+                    p-2 bg-red-500/10 border border-red-500/30 
+                    rounded-xl hover:bg-red-500/20 transition disabled:opacity-50
+                  "
                 >
                   <Trash2 size={18} className="text-red-400" />
                 </button>
               </div>
 
-              {/* 🔥 STATUS SELECTOR */}
+              {/* STATUS SELECTOR */}
               <div className="absolute bottom-3 left-3">
                 <select
                   value={p.status || "available"}
                   disabled={updatingStatus === p.id}
-                  onChange={(e) =>
-                    handleStatusChange(p.id, e.target.value)
-                  }
-                  className="bg-zinc-900 border border-zinc-700 text-zinc-300 text-xs px-2 py-1 rounded-lg hover:border-zinc-500 transition"
+                  onChange={(e) => handleStatusChange(p.id, e.target.value)}
+                  className="
+                    bg-[var(--surface)] border border-[var(--border)] 
+                    text-[var(--text)] text-xs px-2 py-1 rounded-lg 
+                    hover:border-[var(--accent)]/40 transition
+                  "
                 >
                   <option value="available">Disponible</option>
                   <option value="reserved">Reservado</option>

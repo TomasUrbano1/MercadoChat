@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ----------------------------- */
-/* 1) TIPOGRAFÍA GLOBAL          */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 1) TIPOGRAFÍA GLOBAL                   */
+/* -------------------------------------- */
 
 html {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
@@ -12,37 +12,73 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ----------------------------- */
-/* 2) PALETA GLOBAL              */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 2) PALETA GLOBAL (DARK MODE DEFAULT)   */
+/* -------------------------------------- */
 
 :root {
+  /* Backgrounds */
   --bg: #0d0d0f;
   --bg-soft: #131316;
   --surface: #1a1a1d;
   --surface-hover: #222226;
+
+  /* Borders */
   --border: rgba(255, 255, 255, 0.08);
+
+  /* Text */
   --text: #e5e7eb;
   --text-muted: #9ca3af;
+
+  /* Accent */
   --accent: #3b82f6;
   --accent-hover: #60a5fa;
+
+  /* Radius */
   --radius: 0.75rem;
+
+  /* Shadows */
+  --shadow-strong: rgba(0, 0, 0, 0.45);
+  --shadow-soft: rgba(0, 0, 0, 0.25);
 }
 
-/* ----------------------------- */
-/* 3) BODY                       */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 3) TEMA CLARO                          */
+/* -------------------------------------- */
+
+html.light {
+  --bg: #f8f9fb;
+  --bg-soft: #ffffff;
+  --surface: #ffffff;
+  --surface-hover: #f2f2f2;
+
+  --border: rgba(0, 0, 0, 0.08);
+
+  --text: #111111;
+  --text-muted: #555555;
+
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+
+  --shadow-strong: rgba(0, 0, 0, 0.15);
+  --shadow-soft: rgba(0, 0, 0, 0.08);
+}
+
+/* -------------------------------------- */
+/* 4) BODY                                */
+/* -------------------------------------- */
 
 body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
-/* ----------------------------- */
-/* 4) SCROLLBAR MODERNA          */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 5) SCROLLBAR                           */
+/* -------------------------------------- */
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -54,13 +90,19 @@ body {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
 }
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
 
-/* ----------------------------- */
-/* 5) INPUTS                     */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 6) INPUTS                              */
+/* -------------------------------------- */
 
 input,
 textarea,
@@ -75,12 +117,12 @@ input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 2px var(--accent-hover);
 }
 
-/* ----------------------------- */
-/* 6) BOTONES                    */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 7) BOTONES                             */
+/* -------------------------------------- */
 
 button {
   @apply px-4 py-2 rounded-lg font-medium transition;
@@ -97,9 +139,9 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* ----------------------------- */
-/* 7) LINKS                      */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 8) LINKS                               */
+/* -------------------------------------- */
 
 a {
   color: var(--accent);
@@ -110,20 +152,25 @@ a:hover {
   color: var(--accent-hover);
 }
 
-/* ----------------------------- */
-/* 8) TARJETAS / SURFACES        */
-/* ----------------------------- */
+/* -------------------------------------- */
+/* 9) TARJETAS / SURFACES                 */
+/* -------------------------------------- */
 
 .surface {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px var(--shadow-strong);
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
-/* ----------------------------- */
-/* 9) ANIMACIONES SUAVES         */
-/* ----------------------------- */
+.surface:hover {
+  background: var(--surface-hover);
+}
+
+/* -------------------------------------- */
+/* 10) ANIMACIONES SUAVES                 */
+/* -------------------------------------- */
 
 .fade-in {
   animation: fadeIn 0.25s ease-out;

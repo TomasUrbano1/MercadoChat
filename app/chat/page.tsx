@@ -59,10 +59,10 @@ export default function ChatPage() {
       .on(
         "postgres_changes",
         {
-          event: "INSERT", // 🔥 SOLO INSERT
+          event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `receiver_id=eq.${user.id}`, // 🔥 SOLO mensajes relevantes
+          filter: `receiver_id=eq.${user.id}`,
         },
         async (payload) => {
           const msg = payload.new as MessagePayload;
@@ -70,7 +70,6 @@ export default function ChatPage() {
 
           const exists = current.find((c) => c.id === msg.conversation_id);
 
-          // Si no existe → agregar sin recargar todo
           if (!exists) {
             const res = await fetch(
               `/api/conversations/single?id=${msg.conversation_id}`
@@ -80,7 +79,6 @@ export default function ChatPage() {
             return;
           }
 
-          // Si existe → actualizar
           const updated = current.map((c) =>
             c.id === msg.conversation_id
               ? {
@@ -94,7 +92,6 @@ export default function ChatPage() {
               : c
           );
 
-          // Reordenar SIEMPRE
           updated.sort(
             (a, b) =>
               new Date(b.updated_at).getTime() -
@@ -117,14 +114,14 @@ export default function ChatPage() {
     if (conv.last_message_seen_at)
       return <span className="text-blue-400 font-semibold">✓✓</span>;
     if (conv.last_message_delivered_at)
-      return <span className="text-zinc-300 font-semibold">✓✓</span>;
-    return <span className="text-zinc-500 font-semibold">✓</span>;
+      return <span className="text-[var(--text-muted)] font-semibold">✓✓</span>;
+    return <span className="text-[var(--text-muted)] font-semibold">✓</span>;
   };
 
   if (!user) {
     return (
       <motion.p
-        className="text-center text-zinc-400 mt-20 text-lg"
+        className="text-center text-[var(--text-muted)] mt-20 text-lg"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
@@ -140,21 +137,24 @@ export default function ChatPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
+      {/* HEADER */}
       <header className="text-center space-y-3">
-        <h1 className="text-5xl font-extrabold tracking-tight">
+        <h1 className="text-5xl font-extrabold tracking-tight text-[var(--text)]">
           Conversaciones
         </h1>
-        <p className="text-zinc-400 text-lg">
+        <p className="text-[var(--text-muted)] text-lg">
           Chateá con compradores y vendedores en tiempo real.
         </p>
       </header>
 
+      {/* LOADING */}
       {loading && (
-        <p className="text-center text-zinc-500 text-lg animate-pulse">
+        <p className="text-center text-[var(--text-muted)] text-lg animate-pulse">
           Cargando conversaciones...
         </p>
       )}
 
+      {/* LISTA */}
       {!loading && conversations.length > 0 && (
         <section className="space-y-4">
           {conversations.map((conv, i) => (
@@ -166,22 +166,28 @@ export default function ChatPage() {
             >
               <Link
                 href={`/chat/${conv.id}`}
-                className="block bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all rounded-2xl p-5 shadow-sm hover:shadow-lg hover:shadow-black/20"
+                className="
+                  block rounded-2xl p-5 
+                  bg-[var(--surface)] border border-[var(--border)]
+                  hover:bg-[var(--surface-hover)]
+                  transition-all shadow-sm hover:shadow-lg
+                "
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-semibold text-xl">
+                    <h2 className="font-semibold text-xl text-[var(--text)]">
                       {conv.product_title}
                     </h2>
-                    <p className="text-zinc-400 text-sm mt-1 flex items-center gap-1">
+
+                    <p className="text-[var(--text-muted)] text-sm mt-1 flex items-center gap-1">
                       {getStatusIcon(conv)}
                       {conv.last_message || "Sin mensajes aún"}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 text-blue-400">
+                  <div className="flex items-center gap-2 text-[var(--accent)]">
                     <MessageCircle size={22} />
-                    <span className="text-sm">
+                    <span className="text-sm text-[var(--text-muted)]">
                       {new Date(conv.updated_at).toLocaleString("es-AR", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -197,9 +203,10 @@ export default function ChatPage() {
         </section>
       )}
 
+      {/* EMPTY */}
       {!loading && conversations.length === 0 && (
         <motion.p
-          className="text-zinc-500 text-center text-lg"
+          className="text-[var(--text-muted)] text-center text-lg"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >

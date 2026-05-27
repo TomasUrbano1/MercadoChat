@@ -64,7 +64,7 @@ export default function ChatWindow({
     loadMessages();
   }, [conversationId, currentUserId]);
 
-  // Realtime mensajes (FIX: un solo listener con filtro)
+  // Realtime mensajes
   useEffect(() => {
     const channel = supabase
       .channel(`messages-${conversationId}`)
@@ -79,7 +79,6 @@ export default function ChatWindow({
         (payload) => {
           const msg = payload.new as Message;
 
-          // INSERT
           if (payload.eventType === "INSERT") {
             if (!messagesRef.current.some((m) => m.id === msg.id)) {
               setMessages((prev) => [...prev, msg]);
@@ -98,7 +97,6 @@ export default function ChatWindow({
             }
           }
 
-          // UPDATE
           if (payload.eventType === "UPDATE") {
             setMessages((prev) =>
               prev.map((m) => (m.id === msg.id ? msg : m))
@@ -190,14 +188,22 @@ export default function ChatWindow({
   };
 
   return (
-    <div className="flex flex-col h-[80vh] border border-white/10 rounded-2xl overflow-hidden bg-zinc-900/40 backdrop-blur-xl">
+    <div
+      className="
+        flex flex-col h-[80vh] rounded-2xl overflow-hidden 
+        bg-[var(--surface)] border border-[var(--border)] shadow-lg
+      "
+    >
+      {/* MENSAJES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading && (
-          <p className="text-zinc-500 text-center">Cargando mensajes...</p>
+          <p className="text-[var(--text-muted)] text-center">
+            Cargando mensajes...
+          </p>
         )}
 
         {!loading && messages.length === 0 && (
-          <p className="text-zinc-500 text-center">
+          <p className="text-[var(--text-muted)] text-center">
             Todavía no hay mensajes. Iniciá la conversación.
           </p>
         )}
@@ -213,7 +219,7 @@ export default function ChatWindow({
         ))}
 
         {otherTyping && (
-          <div className="text-zinc-500 text-sm italic px-2">
+          <div className="text-[var(--text-muted)] text-sm italic px-2">
             El otro usuario está escribiendo…
           </div>
         )}
@@ -221,7 +227,8 @@ export default function ChatWindow({
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-white/10 p-4 bg-zinc-950/60 backdrop-blur-xl">
+      {/* INPUT */}
+      <div className="border-t border-[var(--border)] p-4 bg-[var(--bg-soft)]">
         <div className="flex items-center gap-3">
           <input
             value={content}
@@ -233,14 +240,23 @@ export default function ChatWindow({
               }
             }}
             placeholder="Escribí un mensaje..."
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-50"
+            className="
+              flex-1 px-4 py-3 rounded-xl text-sm
+              bg-[var(--surface)] border border-[var(--border)]
+              text-[var(--text)] placeholder-[var(--text-muted)]
+              focus:outline-none focus:ring-2 focus:ring-[var(--accent)]
+            "
             disabled={sending}
           />
 
           <button
             onClick={sendMessage}
             disabled={sending}
-            className="bg-blue-600 hover:bg-blue-500 transition px-4 py-3 rounded-xl text-white flex items-center gap-2 disabled:opacity-50"
+            className="
+              px-4 py-3 rounded-xl flex items-center gap-2
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)]
+              text-white transition disabled:opacity-50
+            "
           >
             <Send size={18} />
           </button>

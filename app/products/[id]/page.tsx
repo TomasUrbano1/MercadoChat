@@ -46,6 +46,8 @@ export default function ProductDetailPage({ params }: any) {
   // Cargar producto
   // -----------------------------
   useEffect(() => {
+    if (!id) return; // ← FIX: evita query rota
+
     async function load() {
       const { data } = await supabase
         .from("products")

@@ -73,7 +73,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="space-y-28">
+    <div className="space-y-28 max-w-6xl mx-auto px-4">
       {/* HERO */}
       <section className="relative py-24 text-center overflow-hidden rounded-3xl border border-white/5 bg-gradient-to-b from-blue-600/15 via-zinc-900/60 to-zinc-950 shadow-xl shadow-black/40">
         <motion.div
@@ -83,7 +83,7 @@ export default function HomePage() {
           transition={{ duration: 0.7 }}
         >
           <motion.h1
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6"
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
@@ -184,7 +184,7 @@ export default function HomePage() {
 
         <div className="grid md:grid-cols-3 gap-8">
           <motion.div
-            className="surface p-8 text-center hover:border-zinc-500/80 transition"
+            className="surface p-8 text-center hover:border-zinc-500/80 transition rounded-2xl"
             whileHover={{ y: -4 }}
           >
             <MessageCircle size={40} className="mx-auto text-blue-400 mb-4" />
@@ -195,7 +195,7 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div
-            className="surface p-8 text-center hover:border-zinc-500/80 transition"
+            className="surface p-8 text-center hover:border-zinc-500/80 transition rounded-2xl"
             whileHover={{ y: -4 }}
           >
             <Zap size={40} className="mx-auto text-yellow-400 mb-4" />
@@ -209,7 +209,7 @@ export default function HomePage() {
           </motion.div>
 
           <motion.div
-            className="surface p-8 text-center hover:border-zinc-500/80 transition"
+            className="surface p-8 text-center hover:border-zinc-500/80 transition rounded-2xl"
             whileHover={{ y: -4 }}
           >
             <ShieldCheck size={40} className="mx-auto text-green-400 mb-4" />
@@ -237,7 +237,7 @@ export default function HomePage() {
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="min-w-[260px] h-64 surface animate-pulse"
+                className="min-w-[260px] h-64 surface animate-pulse rounded-xl"
               />
             ))}
           </div>
@@ -255,7 +255,6 @@ export default function HomePage() {
           </p>
         )}
       </section>
-
       {/* PRODUCTOS + FILTROS */}
       <section className="space-y-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -286,7 +285,7 @@ export default function HomePage() {
         {loading ? (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 surface animate-pulse" />
+              <div key={i} className="h-64 surface animate-pulse rounded-xl" />
             ))}
           </div>
         ) : filteredProducts.length > 0 ? (
@@ -326,7 +325,7 @@ export default function HomePage() {
           ].map((t) => (
             <motion.div
               key={t.name}
-              className="surface p-8 hover:border-zinc-500/80 transition"
+              className="surface p-8 hover:border-zinc-500/80 transition rounded-2xl"
               whileHover={{ y: -4 }}
             >
               <Star className="text-yellow-400 mb-3" />
